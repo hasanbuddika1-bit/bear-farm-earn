@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdsRouteImport } from './routes/ads'
+import { Route as ReferRouteImport } from './routes/refer'
 import { Route as TasksRouteImport } from './routes/tasks'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const AdsRoute = AdsRouteImport.update({
   path: '/ads',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReferRoute = ReferRouteImport.update({
+  id: '/refer',
+  path: '/refer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
@@ -32,30 +38,34 @@ const TasksRoute = TasksRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ads': typeof AdsRoute
+  '/refer': typeof ReferRoute
   '/tasks': typeof TasksRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ads': typeof AdsRoute
+  '/refer': typeof ReferRoute
   '/tasks': typeof TasksRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ads': typeof AdsRoute
+  '/refer': typeof ReferRoute
   '/tasks': typeof TasksRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ads' | '/tasks'
+  fullPaths: '/' | '/ads' | '/refer' | '/tasks'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ads' | '/tasks'
-  id: '__root__' | '/' | '/ads' | '/tasks'
+  to: '/' | '/ads' | '/refer' | '/tasks'
+  id: '__root__' | '/' | '/ads' | '/refer' | '/tasks'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdsRoute: typeof AdsRoute
+  ReferRoute: typeof ReferRoute
   TasksRoute: typeof TasksRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/refer': {
+      id: '/refer'
+      path: '/refer'
+      fullPath: '/refer'
+      preLoaderRoute: typeof ReferRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tasks': {
       id: '/tasks'
       path: '/tasks'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdsRoute: AdsRoute,
+  ReferRoute: ReferRoute,
   TasksRoute: TasksRoute,
 }
 export const routeTree = rootRouteImport
