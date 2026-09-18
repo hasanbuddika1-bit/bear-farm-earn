@@ -13,6 +13,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdsRouteImport } from './routes/ads'
 import { Route as ReferRouteImport } from './routes/refer'
 import { Route as TasksRouteImport } from './routes/tasks'
+import { Route as ProfileIndexRouteImport } from './routes/profile.index'
+import { Route as ProfileLeaderboardRouteImport } from './routes/profile.leaderboard'
+import { Route as ProfilePayoutsRouteImport } from './routes/profile.payouts'
+import { Route as ProfileTransactionsRouteImport } from './routes/profile.transactions'
+import { Route as ProfileWalletRouteImport } from './routes/profile.wallet'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +39,53 @@ const TasksRoute = TasksRouteImport.update({
   path: '/tasks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileIndexRoute = ProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileLeaderboardRoute = ProfileLeaderboardRouteImport.update({
+  id: '/profile/leaderboard',
+  path: '/profile/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfilePayoutsRoute = ProfilePayoutsRouteImport.update({
+  id: '/profile/payouts',
+  path: '/profile/payouts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileTransactionsRoute = ProfileTransactionsRouteImport.update({
+  id: '/profile/transactions',
+  path: '/profile/transactions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileWalletRoute = ProfileWalletRouteImport.update({
+  id: '/profile/wallet',
+  path: '/profile/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ads': typeof AdsRoute
   '/refer': typeof ReferRoute
   '/tasks': typeof TasksRoute
+  '/profile/leaderboard': typeof ProfileLeaderboardRoute
+  '/profile/payouts': typeof ProfilePayoutsRoute
+  '/profile/transactions': typeof ProfileTransactionsRoute
+  '/profile/wallet': typeof ProfileWalletRoute
+  '/profile/': typeof ProfileIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ads': typeof AdsRoute
   '/refer': typeof ReferRoute
   '/tasks': typeof TasksRoute
+  '/profile/leaderboard': typeof ProfileLeaderboardRoute
+  '/profile/payouts': typeof ProfilePayoutsRoute
+  '/profile/transactions': typeof ProfileTransactionsRoute
+  '/profile/wallet': typeof ProfileWalletRoute
+  '/profile': typeof ProfileIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +93,46 @@ export interface FileRoutesById {
   '/ads': typeof AdsRoute
   '/refer': typeof ReferRoute
   '/tasks': typeof TasksRoute
+  '/profile/leaderboard': typeof ProfileLeaderboardRoute
+  '/profile/payouts': typeof ProfilePayoutsRoute
+  '/profile/transactions': typeof ProfileTransactionsRoute
+  '/profile/wallet': typeof ProfileWalletRoute
+  '/profile/': typeof ProfileIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ads' | '/refer' | '/tasks'
+  fullPaths:
+    | '/'
+    | '/ads'
+    | '/refer'
+    | '/tasks'
+    | '/profile/leaderboard'
+    | '/profile/payouts'
+    | '/profile/transactions'
+    | '/profile/wallet'
+    | '/profile/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ads' | '/refer' | '/tasks'
-  id: '__root__' | '/' | '/ads' | '/refer' | '/tasks'
+  to:
+    | '/'
+    | '/ads'
+    | '/refer'
+    | '/tasks'
+    | '/profile/leaderboard'
+    | '/profile/payouts'
+    | '/profile/transactions'
+    | '/profile/wallet'
+    | '/profile'
+  id:
+    | '__root__'
+    | '/'
+    | '/ads'
+    | '/refer'
+    | '/tasks'
+    | '/profile/leaderboard'
+    | '/profile/payouts'
+    | '/profile/transactions'
+    | '/profile/wallet'
+    | '/profile/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +140,11 @@ export interface RootRouteChildren {
   AdsRoute: typeof AdsRoute
   ReferRoute: typeof ReferRoute
   TasksRoute: typeof TasksRoute
+  ProfileLeaderboardRoute: typeof ProfileLeaderboardRoute
+  ProfilePayoutsRoute: typeof ProfilePayoutsRoute
+  ProfileTransactionsRoute: typeof ProfileTransactionsRoute
+  ProfileWalletRoute: typeof ProfileWalletRoute
+  ProfileIndexRoute: typeof ProfileIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +177,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TasksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile/': {
+      id: '/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof ProfileIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/leaderboard': {
+      id: '/profile/leaderboard'
+      path: '/profile/leaderboard'
+      fullPath: '/profile/leaderboard'
+      preLoaderRoute: typeof ProfileLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/payouts': {
+      id: '/profile/payouts'
+      path: '/profile/payouts'
+      fullPath: '/profile/payouts'
+      preLoaderRoute: typeof ProfilePayoutsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/transactions': {
+      id: '/profile/transactions'
+      path: '/profile/transactions'
+      fullPath: '/profile/transactions'
+      preLoaderRoute: typeof ProfileTransactionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/wallet': {
+      id: '/profile/wallet'
+      path: '/profile/wallet'
+      fullPath: '/profile/wallet'
+      preLoaderRoute: typeof ProfileWalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +220,11 @@ const rootRouteChildren: RootRouteChildren = {
   AdsRoute: AdsRoute,
   ReferRoute: ReferRoute,
   TasksRoute: TasksRoute,
+  ProfileLeaderboardRoute: ProfileLeaderboardRoute,
+  ProfilePayoutsRoute: ProfilePayoutsRoute,
+  ProfileTransactionsRoute: ProfileTransactionsRoute,
+  ProfileWalletRoute: ProfileWalletRoute,
+  ProfileIndexRoute: ProfileIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
