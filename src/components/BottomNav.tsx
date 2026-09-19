@@ -3,11 +3,11 @@ import { Home, ListChecks, PlayCircle, Users, User } from "lucide-react";
 import { haptic } from "@/lib/telegram";
 
 const ITEMS = [
-  { to: "/", label: "Home", icon: Home },
-  { to: "/tasks", label: "Task", icon: ListChecks },
+  { to: "/", label: "Home", icon: Home, center: false },
+  { to: "/tasks", label: "Task", icon: ListChecks, center: false },
   { to: "/ads", label: "Ads", icon: PlayCircle, center: true },
-  { to: "/refer", label: "Refer", icon: Users },
-  { to: "/profile", label: "Profile", icon: User },
+  { to: "/refer", label: "Refer", icon: Users, center: false },
+  { to: "/profile", label: "Profile", icon: User, center: false },
 ] as const;
 
 export function BottomNav() {
