@@ -16,8 +16,8 @@ export interface AppConfig {
   referralStage1Ads: number;
   referralStage2Ads: number;
   tokensPerUsd: number;
-  firstWithdrawMin: number;
-  nextWithdrawMin: number;
+  firstWithdrawMinTokens: number;
+  nextWithdrawMinTokens: number;
   withdrawFeeFlatUsd: number;
   withdrawFeePercent: number;
   communityChannelUrl: string;
