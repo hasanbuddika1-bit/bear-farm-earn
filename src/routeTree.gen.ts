@@ -10,10 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdsRouteImport } from './routes/ads'
 import { Route as ReferRouteImport } from './routes/refer'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as ProfileIndexRouteImport } from './routes/profile.index'
+import { Route as ProfileAboutRouteImport } from './routes/profile.about'
 import { Route as ProfileLeaderboardRouteImport } from './routes/profile.leaderboard'
 import { Route as ProfilePayoutsRouteImport } from './routes/profile.payouts'
 import { Route as ProfileTransactionsRouteImport } from './routes/profile.transactions'
@@ -22,6 +24,11 @@ import { Route as ProfileWalletRouteImport } from './routes/profile.wallet'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdsRoute = AdsRouteImport.update({
@@ -42,6 +49,11 @@ const TasksRoute = TasksRouteImport.update({
 const ProfileIndexRoute = ProfileIndexRouteImport.update({
   id: '/profile/',
   path: '/profile/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileAboutRoute = ProfileAboutRouteImport.update({
+  id: '/profile/about',
+  path: '/profile/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileLeaderboardRoute = ProfileLeaderboardRouteImport.update({
@@ -67,9 +79,11 @@ const ProfileWalletRoute = ProfileWalletRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/ads': typeof AdsRoute
   '/refer': typeof ReferRoute
   '/tasks': typeof TasksRoute
+  '/profile/about': typeof ProfileAboutRoute
   '/profile/leaderboard': typeof ProfileLeaderboardRoute
   '/profile/payouts': typeof ProfilePayoutsRoute
   '/profile/transactions': typeof ProfileTransactionsRoute
@@ -78,9 +92,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/ads': typeof AdsRoute
   '/refer': typeof ReferRoute
   '/tasks': typeof TasksRoute
+  '/profile/about': typeof ProfileAboutRoute
   '/profile/leaderboard': typeof ProfileLeaderboardRoute
   '/profile/payouts': typeof ProfilePayoutsRoute
   '/profile/transactions': typeof ProfileTransactionsRoute
@@ -90,9 +106,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/ads': typeof AdsRoute
   '/refer': typeof ReferRoute
   '/tasks': typeof TasksRoute
+  '/profile/about': typeof ProfileAboutRoute
   '/profile/leaderboard': typeof ProfileLeaderboardRoute
   '/profile/payouts': typeof ProfilePayoutsRoute
   '/profile/transactions': typeof ProfileTransactionsRoute
@@ -103,9 +121,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/ads'
     | '/refer'
     | '/tasks'
+    | '/profile/about'
     | '/profile/leaderboard'
     | '/profile/payouts'
     | '/profile/transactions'
@@ -114,9 +134,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/ads'
     | '/refer'
     | '/tasks'
+    | '/profile/about'
     | '/profile/leaderboard'
     | '/profile/payouts'
     | '/profile/transactions'
@@ -125,9 +147,11 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/ads'
     | '/refer'
     | '/tasks'
+    | '/profile/about'
     | '/profile/leaderboard'
     | '/profile/payouts'
     | '/profile/transactions'
@@ -137,9 +161,11 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   AdsRoute: typeof AdsRoute
   ReferRoute: typeof ReferRoute
   TasksRoute: typeof TasksRoute
+  ProfileAboutRoute: typeof ProfileAboutRoute
   ProfileLeaderboardRoute: typeof ProfileLeaderboardRoute
   ProfilePayoutsRoute: typeof ProfilePayoutsRoute
   ProfileTransactionsRoute: typeof ProfileTransactionsRoute
@@ -154,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ads': {
@@ -182,6 +215,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile/'
       preLoaderRoute: typeof ProfileIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile/about': {
+      id: '/profile/about'
+      path: '/profile/about'
+      fullPath: '/profile/about'
+      preLoaderRoute: typeof ProfileAboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile/leaderboard': {
@@ -217,9 +257,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   AdsRoute: AdsRoute,
   ReferRoute: ReferRoute,
   TasksRoute: TasksRoute,
+  ProfileAboutRoute: ProfileAboutRoute,
   ProfileLeaderboardRoute: ProfileLeaderboardRoute,
   ProfilePayoutsRoute: ProfilePayoutsRoute,
   ProfileTransactionsRoute: ProfileTransactionsRoute,

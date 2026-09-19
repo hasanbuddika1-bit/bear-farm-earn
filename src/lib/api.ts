@@ -36,38 +36,38 @@ export const api = {
   claimDailyTask: callable<{ key: string }, { awarded: number; balance: number }>("claimDailyTask"),
 
   listReferrals: callable<
-    { cursor?: number | null },
-    { rows: ReferralRow[]; nextCursor: number | null }
+    { cursor?: string | null },
+    { rows: ReferralRow[]; nextCursor: string | null }
   >("listReferrals"),
   claimReferralEarnings: callable<{ idempotencyKey: string }, { awarded: number }>(
     "claimReferralEarnings",
   ),
 
   setWallet: callable<{ address: string }, { ok: true }>("setWallet"),
-  requestWithdraw: callable<
+  requestWithdrawal: callable<
     { amountTokens: number; idempotencyKey: string },
     { id: string; netUsd: number }
-  >("requestWithdraw"),
+  >("requestWithdrawal"),
   listWithdrawals: callable<
-    { cursor?: number | null },
+    { cursor?: string | null },
+    { rows: WithdrawalDoc[]; nextCursor: string | null }
+  >("listWithdrawals"),
+  listLedger: callable<
+    { cursor?: string | null },
+    { rows: LedgerEntry[]; nextCursor: string | null }
+  >("listLedger"),
+
+  publicLeaderboard: callable<
+    { cursor?: string | null },
+    { rows: { name: string; earned: number; isMe: boolean }[]; myRank: number | null }
+  >("publicLeaderboard"),
+  publicPayouts: callable<
+    { cursor?: string | null },
     {
-      rows: WithdrawalDoc[];
-      nextCursor: number | null;
+      recent: { name: string; netUsd: number; paidAt: number }[];
       totalPaidUsd: number;
       pendingUsd: number;
     }
-  >("listWithdrawals"),
-  listLedger: callable<
-    { cursor?: number | null },
-    { rows: LedgerEntry[]; nextCursor: number | null }
-  >("listLedger"),
-
-  leaderboard: callable<void, { rows: { name: string; earned: number }[]; updatedAt: number }>(
-    "leaderboard",
-  ),
-  publicPayouts: callable<
-    void,
-    { rows: { name: string; netUsd: number; at: number }[]; totalPaidUsd: number }
   >("publicPayouts"),
 
   updatePreferences: callable<

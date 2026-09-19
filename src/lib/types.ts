@@ -16,8 +16,8 @@ export interface AppConfig {
   referralStage1Ads: number;
   referralStage2Ads: number;
   tokensPerUsd: number;
-  firstWithdrawMin: number;
-  nextWithdrawMin: number;
+  firstWithdrawMinTokens: number;
+  nextWithdrawMinTokens: number;
   withdrawFeeFlatUsd: number;
   withdrawFeePercent: number;
   communityChannelUrl: string;
@@ -83,6 +83,7 @@ export interface TaskDoc {
 export interface LedgerEntry {
   id: string;
   type: string;
+  label: string;
   amount: number;
   status: string;
   note?: string;
