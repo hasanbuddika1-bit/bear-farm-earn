@@ -83,6 +83,7 @@ export interface TaskDoc {
 export interface LedgerEntry {
   id: string;
   type: string;
+  label: string;
   amount: number;
   status: string;
   note?: string;
