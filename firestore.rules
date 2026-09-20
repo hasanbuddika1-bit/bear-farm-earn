@@ -1,0 +1,65 @@
+rules_version = '2';
+
+// Deny by default. Clients may READ a narrow slice of their own data; every write
+// that touches money goes through Cloud Functions with the Admin SDK.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Own profile: read only. Balances, mining and suspension are server-written.
+    match /users/{uid} {
+      allow get: if isSelf(uid);
+      allow list, create, update, delete: if false;
+
+      // Append-only reward ledger — readable by the owner, never writable.
+      match /ledger/{entryId} {
+        allow read: if isSelf(uid);
+        allow write: if false;
+      }
+
+      match /taskClaims/{taskId} {
+        allow read: if isSelf(uid);
+        allow write: if false;
+      }
+
+      match /dailyTasks/{dayKey} {
+        allow read: if isSelf(uid);
+        allow write: if false;
+      }
+    }
+
+    // Public config is delivered through the bootstrap function, not direct reads.
+    match /meta/{docId} {
+      allow read, write: if false;
+    }
+
+    // Tasks, codes, withdrawals, referrals, devices, wallets, ad views,
+    // rate limits, sessions, idempotency keys and the audit log are
+    // server-only collections.
+    match /tasks/{taskId}        { allow read, write: if false; }
+    match /rewardCodes/{code}    { allow read, write: if false; }
+    match /rewardCodes/{code}/claims/{uid} { allow read, write: if false; }
+    match /withdrawals/{id}      { allow read, write: if false; }
+    match /referrals/{id}        { allow read, write: if false; }
+    match /devices/{id}          { allow read, write: if false; }
+    match /wallets/{address}     { allow read, write: if false; }
+    match /adViews/{id}          { allow read, write: if false; }
+    match /taskSessions/{id}     { allow read, write: if false; }
+    match /idempotency/{key}     { allow read, write: if false; }
+    match /rateLimits/{id}       { allow read, write: if false; }
+    match /auditLog/{id}         { allow read, write: if false; }
+    match /adminSessions/{uid}   { allow read, write: if false; }
+
+    // Anything not listed above is denied.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
