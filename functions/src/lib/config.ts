@@ -111,9 +111,18 @@ export function previousUtcDayKey(dayKey: string) {
   return utcDayKey(ms);
 }
 
-/** Streak rules: next day continues, same day blocked, gap restarts at day 1. */
-export function nextStreak(lastClaimDay: string | null, today: string, length: number) {
+/**
+ * Streak rules: consecutive UTC day continues the streak, same day is blocked
+ * (returns null), and any missed day restarts at day 1.
+ */
+export function nextStreak(
+  lastClaimDay: string | null,
+  currentStreak: number,
+  today: string,
+  cycleLength: number,
+): number | null {
   if (!lastClaimDay) return 1;
   if (lastClaimDay === today) return null;
-  return lastClaimDay === previousUtcDayKey(today) ? Math.min(length, 0 + (0 || 1)) : 1;
+  if (lastClaimDay !== previousUtcDayKey(today)) return 1;
+  return currentStreak >= cycleLength ? 1 : currentStreak + 1;
 }
