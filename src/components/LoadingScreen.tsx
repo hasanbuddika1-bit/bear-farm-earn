@@ -79,7 +79,7 @@ export function LoadingScreen({
   );
 }
 
-export function SuspendedScreen({ reason }: { reason?: string | null }) {
+export function SuspendedScreen({ reason }: { reason?: string | null | undefined }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
       <div className="flex size-20 items-center justify-center rounded-full bg-destructive/15 text-destructive">
