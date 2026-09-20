@@ -1,4 +1,3 @@
-import { col } from "./init";
 
 export interface AppConfig {
   tokenName: string;
@@ -78,6 +77,8 @@ export const CONFIG_BOUNDS: Record<string, [number, number]> = {
 };
 
 export async function getConfig(): Promise<AppConfig> {
+  // Imported lazily so the pure helpers in this file stay testable without Admin SDK init.
+  const { col } = await import("./init");
   const snap = await col.config().get();
   const stored = snap.exists ? (snap.data() as Partial<AppConfig>) : {};
   return { ...DEFAULT_CONFIG, ...stored };

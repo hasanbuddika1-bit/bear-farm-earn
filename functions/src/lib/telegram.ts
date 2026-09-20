@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "crypto";
-import { HttpsError } from "./init";
+import { HttpsError } from "firebase-functions/v2/https";
 
 export interface TelegramUser {
   id: number;
