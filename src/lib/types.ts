@@ -36,6 +36,7 @@ export interface UserDoc {
   photoUrl: string | null;
   balance: number;
   totalEarned: number;
+  withdrawalCount: number;
   suspended: boolean;
   suspendedReason?: string | null;
   walletAddress: string | null;
