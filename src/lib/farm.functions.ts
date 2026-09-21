@@ -111,7 +111,7 @@ export const claimDaily = createServerFn({ method: "POST" })
       .from("users")
       .update({ last_daily_day: today, daily_streak: streak })
       .eq("id", row.id)
-      .neq("last_daily_day", today)
+      .or(`last_daily_day.is.null,last_daily_day.neq.${today}`)
       .select("id");
     if (!claimed.data || claimed.data.length === 0) throw new Error("You already claimed today's reward.");
 
@@ -270,12 +270,53 @@ export const claimTask = createServerFn({ method: "POST" })
     const { award } = await import("./server/ledger.server");
     const { rateLimit } = await import("./server/session.server");
     const { isChatMember } = await import("./server/telegram.server");
-    const { utcDayKey } = await import("./server/config.server");
+    const { utcDayKey, loadConfig } = await import("./server/config.server");
     const { db } = await import("./server/db.server");
 
     const { row } = await requireUser(data.token);
     await rateLimit(`task:${row.id}`, 40, 60);
     const client = db();
+
+    // Built-in daily tasks (community / payment channel visit, invite a friend).
+    if (data.taskId === "community" || data.taskId === "payment" || data.taskId === "referral") {
+      const config = await loadConfig();
+      const dayKey = utcDayKey();
+      let reward: number;
+
+      if (data.taskId === "referral") {
+        reward = config.dailyReferralTaskReward;
+        const refs = await client
+          .from("referrals")
+          .select("id", { count: "exact", head: true })
+          .eq("referrer_id", row.id)
+          .gte("created_at", `${dayKey}T00:00:00Z`);
+        if ((refs.count ?? 0) < 1) throw new Error("Invite at least 1 friend today, then claim.");
+      } else {
+        const url =
+          data.taskId === "community" ? config.communityChannelUrl : config.paymentChannelUrl;
+        reward =
+          data.taskId === "community"
+            ? config.dailyTaskCommunityReward
+            : config.dailyTaskPaymentReward;
+        const handle = `@${(url.split("?")[0] ?? "").split("/").filter(Boolean).pop() ?? ""}`;
+        const joined = await isChatMember(handle, Number(row.telegram_id));
+        if (!joined) throw new Error("Join the channel first, then tap Claim.");
+      }
+
+      const dailyClaim = await client
+        .from("task_claims")
+        .insert({ user_id: row.id, task_key: data.taskId, day_key: dayKey });
+      if (dailyClaim.error) throw new Error("You already claimed this today.");
+
+      const dailyResult = await award({
+        userId: row.id,
+        amount: reward,
+        kind: "task_daily",
+        label: "Daily task reward",
+        idempotencyKey: `task:${row.id}:${data.taskId}:${dayKey}`,
+      });
+      return { awarded: dailyResult.awarded, balance: dailyResult.balance };
+    }
 
     const task = await client
       .from("tasks")
