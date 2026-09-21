@@ -60,10 +60,10 @@ export function LoadingScreen({
 
           {error?.kind === "telegram" ? (
             <a
-              href="https://t.me/Bear_Farmbot/earn"
+              href="https://t.me/Bear_Farmbot?startapp=1"
               className="btn-pop active:btn-pop-active mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-display font-bold text-primary-foreground"
             >
-              <Send className="size-4" /> Open in Telegram
+              <Send className="size-4" /> Reopen from Telegram
             </a>
           ) : error?.kind !== "config" ? (
             <button
