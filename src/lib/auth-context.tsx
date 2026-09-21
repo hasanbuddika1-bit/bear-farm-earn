@@ -8,11 +8,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { onAuthStateChanged, signInWithCustomToken, type User } from "firebase/auth";
-import { doc, onSnapshot } from "firebase/firestore";
 
-import { firebaseAuth, firestore, isFirebaseConfigured } from "./firebase";
 import { api } from "./api";
+import { clearSessionToken, onBalanceChanged } from "./session";
 import { initTelegram, telegram } from "./telegram";
 import { getDeviceId } from "./device";
 import type { AppConfig, UserDoc } from "./types";
@@ -40,6 +38,7 @@ interface AuthValue {
   config: AppConfig | null;
   serverOffset: number;
   retry: () => void;
+  refresh: () => void;
   isAdmin: boolean;
 }
 
@@ -58,15 +57,16 @@ export function useUser(): { user: UserDoc; config: AppConfig; uid: string } {
   return { user, config, uid };
 }
 
+const POLL_MS = 20_000;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("booting");
   const [error, setError] = useState<AuthErrorInfo | null>(null);
   const [user, setUser] = useState<UserDoc | null>(null);
-  const [uid, setUid] = useState<string | null>(null);
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [serverOffset, setServerOffset] = useState(0);
   const [attempt, setAttempt] = useState(0);
-  const unsubUser = useRef<(() => void) | null>(null);
+  const readyRef = useRef(false);
 
   const retry = useCallback(() => {
     setError(null);
@@ -74,21 +74,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAttempt((n) => n + 1);
   }, []);
 
+  const refresh = useCallback(() => {
+    if (!readyRef.current) return;
+    void api
+      .me()
+      .then((fresh) => setUser(fresh))
+      .catch(() => undefined);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
     async function boot() {
-      if (!isFirebaseConfigured()) {
-        setStatus("unconfigured");
-        setError({
-          kind: "config",
-          title: "Setup required",
-          message:
-            "Firebase API key is missing. Add VITE_FIREBASE_API_KEY to the environment and redeploy.",
-        });
-        return;
-      }
-
       const tg = initTelegram();
       const initData = tg?.initData ?? "";
       if (!initData) {
@@ -114,29 +111,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         setStatus("connecting");
         const startParam = telegram()?.initDataUnsafe?.start_param ?? null;
-        const { token } = await api.telegramAuth({
-          initData,
-          startParam,
-          deviceId: getDeviceId(),
-        });
-        if (cancelled) return;
-        await signInWithCustomToken(firebaseAuth(), token);
+        await api.telegramAuth({ initData, startParam, deviceId: getDeviceId() });
         if (cancelled) return;
 
         setStatus("syncing");
         const boot = await api.bootstrap();
         if (cancelled) return;
         setConfig(boot.config);
+        setUser(boot.user);
         setServerOffset(boot.serverTime - Date.now());
+        readyRef.current = true;
+        setStatus("ready");
       } catch (err) {
         if (cancelled) return;
-        const e = err as { code?: string; message?: string };
+        clearSessionToken();
+        readyRef.current = false;
+        const e = err as { message?: string };
         const offline = typeof navigator !== "undefined" && navigator.onLine === false;
-        const isNetwork =
-          offline ||
-          e?.code === "functions/unavailable" ||
-          e?.code === "functions/deadline-exceeded" ||
-          /network|fetch|timeout/i.test(e?.message ?? "");
+        const isNetwork = offline || /network|fetch|timeout|failed to fetch/i.test(e?.message ?? "");
         setStatus("error");
         setError(
           isNetwork
@@ -160,56 +152,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [attempt]);
 
-  // Single realtime listener on the signed-in user's own document (read-efficient).
+  // Polling keeps reads predictable instead of a per-user realtime socket.
   useEffect(() => {
-    if (!isFirebaseConfigured()) return;
-    const unsubAuth = onAuthStateChanged(firebaseAuth(), (fbUser: User | null) => {
-      unsubUser.current?.();
-      unsubUser.current = null;
-      if (!fbUser) {
-        setUid(null);
-        setUser(null);
-        return;
-      }
-      setUid(fbUser.uid);
-      unsubUser.current = onSnapshot(
-        doc(firestore(), "users", fbUser.uid),
-        (snap) => {
-          const data = snap.data() as UserDoc | undefined;
-          if (data) {
-            setUser(data);
-            setStatus((prev) => (prev === "error" ? prev : "ready"));
-          }
-        },
-        () => {
-          setStatus("error");
-          setError({
-            kind: "network",
-            title: "Live sync interrupted",
-            message: "Your farm data stopped syncing. Tap retry to reconnect.",
-          });
-        },
-      );
-    });
+    if (status !== "ready") return;
+    const timer = window.setInterval(refresh, POLL_MS);
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+    const stop = onBalanceChanged(refresh);
     return () => {
-      unsubAuth();
-      unsubUser.current?.();
-      unsubUser.current = null;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+      stop();
     };
-  }, [attempt]);
+  }, [status, refresh]);
 
   const value = useMemo<AuthValue>(
     () => ({
-      status: config && user ? (status === "error" ? "error" : "ready") : status,
+      status,
       error,
       user,
-      uid,
+      uid: user ? String(user.telegramId) : null,
       config,
       serverOffset,
       retry,
+      refresh,
       isAdmin: Boolean(user?.isAdmin),
     }),
-    [status, error, user, uid, config, serverOffset, retry],
+    [status, error, user, config, serverOffset, retry, refresh],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -244,24 +244,65 @@ grant select on public.public_leaderboard, public.public_payouts to anon, authen
 -- 4. Seed config
 -- ============================================================
 insert into public.app_config (id, data) values ('default', jsonb_build_object(
-  'miningTokensPerCycle', 100,
-  'miningMinutes', 60,
+  'miningRewardPerCycle', 100,
+  'miningCycleMinutes', 60,
   'dailyRewards', jsonb_build_array(30,40,50,70,90,120,150),
-  'communityTaskReward', 50,
-  'paymentTaskReward', 50,
-  'referralTaskReward', 250,
+  'dailyTaskCommunityReward', 50,
+  'dailyTaskPaymentReward', 50,
+  'dailyReferralTaskReward', 250,
   'referralJoinReward', 200,
   'referralStage1Reward', 400,
   'referralStage1Ads', 10,
   'referralStage2Reward', 600,
   'referralStage2Ads', 15,
   'tokensPerUsd', 100000,
-  'firstWithdrawMin', 10000,
-  'nextWithdrawMin', 20000,
-  'withdrawFeeUsd', 0.01,
+  'firstWithdrawMinTokens', 10000,
+  'nextWithdrawMinTokens', 20000,
+  'withdrawFeeFlatUsd', 0.01,
   'withdrawFeePercent', 5,
   'adsEnabled', true,
   'maintenance', false
 )) on conflict (id) do nothing;
 
 insert into public.stats (id) values ('global') on conflict (id) do nothing;
+
+-- ============================================================
+-- 5. Atomic money functions (service_role only)
+-- ============================================================
+create or replace function public.bf_apply_amount(
+  p_user uuid, p_amount bigint, p_kind text, p_label text, p_meta jsonb default '{}'::jsonb
+) returns bigint
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare new_balance bigint;
+begin
+  update public.users
+     set balance = balance + p_amount,
+         lifetime_earned = lifetime_earned + greatest(p_amount, 0),
+         updated_at = now()
+   where id = p_user
+  returning balance into new_balance;
+
+  if new_balance is null then
+    raise exception 'user not found';
+  end if;
+
+  insert into public.ledger (user_id, kind, label, amount, balance_after, meta)
+  values (p_user, p_kind, p_label, p_amount, new_balance, coalesce(p_meta, '{}'::jsonb));
+
+  return new_balance;
+end $$;
+
+create or replace function public.bf_ledger_sum(p_user uuid)
+returns bigint
+language sql
+security definer
+set search_path = public
+as $$ select coalesce(sum(amount), 0) from public.ledger where user_id = p_user $$;
+
+revoke all on function public.bf_apply_amount(uuid, bigint, text, text, jsonb) from public, anon, authenticated;
+revoke all on function public.bf_ledger_sum(uuid) from public, anon, authenticated;
+grant execute on function public.bf_apply_amount(uuid, bigint, text, text, jsonb) to service_role;
+grant execute on function public.bf_ledger_sum(uuid) to service_role;

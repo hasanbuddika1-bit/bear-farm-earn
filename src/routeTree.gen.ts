@@ -20,6 +20,9 @@ import { Route as ProfileLeaderboardRouteImport } from './routes/profile.leaderb
 import { Route as ProfilePayoutsRouteImport } from './routes/profile.payouts'
 import { Route as ProfileTransactionsRouteImport } from './routes/profile.transactions'
 import { Route as ProfileWalletRouteImport } from './routes/profile.wallet'
+import { Route as ApiPublicAdsPostbackRouteImport } from './routes/api/public/ads-postback'
+import { Route as ApiPublicCronRouteImport } from './routes/api/public/cron'
+import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +79,22 @@ const ProfileWalletRoute = ProfileWalletRouteImport.update({
   path: '/profile/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAdsPostbackRoute = ApiPublicAdsPostbackRouteImport.update({
+  id: '/api/public/ads-postback',
+  path: '/api/public/ads-postback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCronRoute = ApiPublicCronRouteImport.update({
+  id: '/api/public/cron',
+  path: '/api/public/cron',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTelegramWebhookRoute =
+  ApiPublicTelegramWebhookRouteImport.update({
+    id: '/api/public/telegram-webhook',
+    path: '/api/public/telegram-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +108,9 @@ export interface FileRoutesByFullPath {
   '/profile/transactions': typeof ProfileTransactionsRoute
   '/profile/wallet': typeof ProfileWalletRoute
   '/profile/': typeof ProfileIndexRoute
+  '/api/public/ads-postback': typeof ApiPublicAdsPostbackRoute
+  '/api/public/cron': typeof ApiPublicCronRoute
+  '/api/public/telegram-webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,6 +124,9 @@ export interface FileRoutesByTo {
   '/profile/transactions': typeof ProfileTransactionsRoute
   '/profile/wallet': typeof ProfileWalletRoute
   '/profile': typeof ProfileIndexRoute
+  '/api/public/ads-postback': typeof ApiPublicAdsPostbackRoute
+  '/api/public/cron': typeof ApiPublicCronRoute
+  '/api/public/telegram-webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +141,9 @@ export interface FileRoutesById {
   '/profile/transactions': typeof ProfileTransactionsRoute
   '/profile/wallet': typeof ProfileWalletRoute
   '/profile/': typeof ProfileIndexRoute
+  '/api/public/ads-postback': typeof ApiPublicAdsPostbackRoute
+  '/api/public/cron': typeof ApiPublicCronRoute
+  '/api/public/telegram-webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +159,9 @@ export interface FileRouteTypes {
     | '/profile/transactions'
     | '/profile/wallet'
     | '/profile/'
+    | '/api/public/ads-postback'
+    | '/api/public/cron'
+    | '/api/public/telegram-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +175,9 @@ export interface FileRouteTypes {
     | '/profile/transactions'
     | '/profile/wallet'
     | '/profile'
+    | '/api/public/ads-postback'
+    | '/api/public/cron'
+    | '/api/public/telegram-webhook'
   id:
     | '__root__'
     | '/'
@@ -157,6 +191,9 @@ export interface FileRouteTypes {
     | '/profile/transactions'
     | '/profile/wallet'
     | '/profile/'
+    | '/api/public/ads-postback'
+    | '/api/public/cron'
+    | '/api/public/telegram-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,6 +208,9 @@ export interface RootRouteChildren {
   ProfileTransactionsRoute: typeof ProfileTransactionsRoute
   ProfileWalletRoute: typeof ProfileWalletRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
+  ApiPublicAdsPostbackRoute: typeof ApiPublicAdsPostbackRoute
+  ApiPublicCronRoute: typeof ApiPublicCronRoute
+  ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -252,6 +292,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileWalletRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ads-postback': {
+      id: '/api/public/ads-postback'
+      path: '/api/public/ads-postback'
+      fullPath: '/api/public/ads-postback'
+      preLoaderRoute: typeof ApiPublicAdsPostbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron': {
+      id: '/api/public/cron'
+      path: '/api/public/cron'
+      fullPath: '/api/public/cron'
+      preLoaderRoute: typeof ApiPublicCronRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/telegram-webhook': {
+      id: '/api/public/telegram-webhook'
+      path: '/api/public/telegram-webhook'
+      fullPath: '/api/public/telegram-webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -267,6 +328,9 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileTransactionsRoute: ProfileTransactionsRoute,
   ProfileWalletRoute: ProfileWalletRoute,
   ProfileIndexRoute: ProfileIndexRoute,
+  ApiPublicAdsPostbackRoute: ApiPublicAdsPostbackRoute,
+  ApiPublicCronRoute: ApiPublicCronRoute,
+  ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
