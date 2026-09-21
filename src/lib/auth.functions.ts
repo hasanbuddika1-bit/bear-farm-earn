@@ -9,12 +9,13 @@ export const telegramAuth = createServerFn({ method: "POST" })
     startParam: input?.startParam ? String(input.startParam).slice(0, 64) : null,
     deviceId: String(input?.deviceId ?? "").slice(0, 128),
   }))
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }) => {
     const { verifyInitData, sendMessage, notifyAdmin } = await import("./server/telegram.server");
     const { db } = await import("./server/db.server");
     const { issueSession } = await import("./server/session.server");
     const { USER_COLUMNS } = await import("./server/user.server");
     const { loadConfig } = await import("./server/config.server");
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
 
     const verified = await verifyInitData(data.initData);
     const client = db();
@@ -22,8 +23,8 @@ export const telegramAuth = createServerFn({ method: "POST" })
     const startParam = data.startParam ?? verified.startParam;
 
     const ip =
-      (context as { request?: Request }).request?.headers.get("cf-connecting-ip") ??
-      (context as { request?: Request }).request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      getRequestHeader("cf-connecting-ip") ??
+      getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() ??
       null;
 
     const existing = await client
