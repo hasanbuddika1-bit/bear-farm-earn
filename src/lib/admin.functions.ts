@@ -523,7 +523,7 @@ export const adminAction = createServerFn({ method: "POST" })
             }
             next[key] = num;
           } else if (typeof (current as unknown as Record<string, unknown>)[key] === "boolean") {
-            next[key] = Boolean(value);
+            next[key] = value === true || value === "true" || value === "1";
           } else if (Array.isArray((current as unknown as Record<string, unknown>)[key])) {
             const arr = Array.isArray(value) ? value.map((v) => Math.max(0, Math.floor(Number(v)))) : null;
             if (!arr || arr.length !== 7) throw new Error("Daily rewards need 7 values.");
