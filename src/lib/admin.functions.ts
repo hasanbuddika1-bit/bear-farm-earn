@@ -118,11 +118,14 @@ export const adminList = createServerFn({ method: "POST" })
 
       if (data.resource === "config") {
         const config = await loadConfig();
-        const flat: AdminRow = {};
-        for (const [key, value] of Object.entries(config)) {
-          flat[key] = Array.isArray(value) ? value.join(",") : (value as string | number | boolean);
-        }
-        return { rows: [flat], nextCursor: null, config: flat };
+        return {
+          rows: Object.entries(config).map(([key, value]) => ({
+            id: key,
+            key,
+            value: Array.isArray(value) ? value.join(",") : String(value),
+          })),
+          nextCursor: null,
+        };
       }
 
       if (data.resource === "users") {
@@ -139,7 +142,30 @@ export const adminList = createServerFn({ method: "POST" })
           );
         }
         const { data: rows } = await q;
-        return { rows: (rows ?? []) as unknown as AdminRow[], nextCursor: null };
+        const ids = (rows ?? []).map((r) => r.id as string);
+        const counts = new Map<string, number>();
+        if (ids.length > 0) {
+          const { data: refs } = await client.from("referrals").select("referrer_id").in("referrer_id", ids);
+          for (const r of refs ?? []) {
+            const key = r.referrer_id as string;
+            counts.set(key, (counts.get(key) ?? 0) + 1);
+          }
+        }
+        return {
+          rows: (rows ?? []).map((r) => ({
+            id: r.id as string,
+            telegramId: r.telegram_id as string,
+            username: (r.username as string) ?? "",
+            firstName: (r.first_name as string) ?? "",
+            balance: Number(r.balance),
+            totalEarned: Number(r.lifetime_earned),
+            referralCount: counts.get(r.id as string) ?? 0,
+            wallet: (r.wallet_address as string) ?? "",
+            suspended: Boolean(r.suspended),
+            createdAt: (r.created_at as string) ?? "",
+          })),
+          nextCursor: null,
+        };
       }
 
       if (data.resource === "withdrawals") {
@@ -148,7 +174,36 @@ export const adminList = createServerFn({ method: "POST" })
           .select("id, user_id, tokens, net_usd, fee_usd, wallet_address, status, tx_id, created_at")
           .order("created_at", { ascending: false })
           .limit(50);
-        return { rows: (rows ?? []) as unknown as AdminRow[], nextCursor: null };
+        const list = rows ?? [];
+        const owners = new Map<string, { username: string; telegramId: string }>();
+        if (list.length > 0) {
+          const { data: people } = await client
+            .from("users")
+            .select("id, username, telegram_id")
+            .in("id", list.map((w) => w.user_id as string));
+          for (const p of people ?? []) {
+            owners.set(p.id as string, {
+              username: (p.username as string) ?? "",
+              telegramId: p.telegram_id as string,
+            });
+          }
+        }
+        return {
+          rows: list.map((w, index) => ({
+            id: w.id as string,
+            number: list.length - index,
+            amountTokens: Number(w.tokens),
+            netUsd: Number(w.net_usd),
+            feeUsd: Number(w.fee_usd),
+            address: w.wallet_address as string,
+            status: w.status as string,
+            txId: (w.tx_id as string) ?? "",
+            username: owners.get(w.user_id as string)?.username ?? "",
+            telegramId: owners.get(w.user_id as string)?.telegramId ?? "",
+            createdAt: (w.created_at as string) ?? "",
+          })),
+          nextCursor: null,
+        };
       }
 
       if (data.resource === "tasks") {
@@ -157,7 +212,20 @@ export const adminList = createServerFn({ method: "POST" })
           .select("id, group_name, kind, title, url, chat_id, reward, wait_secs, active, sort_order")
           .order("sort_order", { ascending: true })
           .limit(100);
-        return { rows: (rows ?? []) as unknown as AdminRow[], nextCursor: null };
+        return {
+          rows: (rows ?? []).map((t) => ({
+            id: t.id as string,
+            group: t.group_name as string,
+            kind: t.kind as string,
+            title: (t.title as string) ?? "",
+            url: (t.url as string) ?? "",
+            chatId: (t.chat_id as string) ?? "",
+            reward: Number(t.reward),
+            waitSecs: Number(t.wait_secs),
+            active: Boolean(t.active),
+          })),
+          nextCursor: null,
+        };
       }
 
       if (data.resource === "codes") {
@@ -166,7 +234,17 @@ export const adminList = createServerFn({ method: "POST" })
           .select("code, reward, max_uses, used_count, active, expires_at")
           .order("created_at", { ascending: false })
           .limit(100);
-        return { rows: (rows ?? []) as unknown as AdminRow[], nextCursor: null };
+        return {
+          rows: (rows ?? []).map((c) => ({
+            id: c.code as string,
+            code: c.code as string,
+            reward: Number(c.reward),
+            claims: Number(c.used_count),
+            maxClaims: Number(c.max_uses),
+            active: Boolean(c.active),
+          })),
+          nextCursor: null,
+        };
       }
 
       if (data.resource === "audit") {
@@ -179,8 +257,10 @@ export const adminList = createServerFn({ method: "POST" })
           rows: (rows ?? []).map((r) => ({
             id: String(r.id),
             actor: (r.actor as string) ?? "",
+            adminId: (r.actor as string) ?? "",
             action: (r.action as string) ?? "",
             target: (r.target as string) ?? null,
+            targetId: (r.target as string) ?? "",
             meta: JSON.stringify(r.meta ?? {}),
             created_at: (r.created_at as string) ?? "",
           })),
