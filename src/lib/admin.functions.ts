@@ -389,9 +389,9 @@ export const adminAction = createServerFn({ method: "POST" })
               throw new Error(`${key} must be between ${bounds[0]} and ${bounds[1]}.`);
             }
             next[key] = num;
-          } else if (typeof (current as Record<string, unknown>)[key] === "boolean") {
+          } else if (typeof (current as unknown as Record<string, unknown>)[key] === "boolean") {
             next[key] = Boolean(value);
-          } else if (Array.isArray((current as Record<string, unknown>)[key])) {
+          } else if (Array.isArray((current as unknown as Record<string, unknown>)[key])) {
             const arr = Array.isArray(value) ? value.map((v) => Math.max(0, Math.floor(Number(v)))) : null;
             if (!arr || arr.length !== 7) throw new Error("Daily rewards need 7 values.");
             next[key] = arr;
