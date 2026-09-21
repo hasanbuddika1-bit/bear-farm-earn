@@ -2,6 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 
 const SESSION_HOURS = 2;
 
+/** Only JSON-safe scalars cross the wire to the admin screen. */
+export type AdminRow = Record<string, string | number | boolean | null>;
+
 async function requireAdmin(token: string, adminToken: string) {
   const { requireUser } = await import("./server/user.server");
   const { db } = await import("./server/db.server");
@@ -83,9 +86,10 @@ export const adminList = createServerFn({ method: "POST" })
     async ({
       data,
     }): Promise<{
-      rows: Record<string, unknown>[];
+      rows: AdminRow[];
       nextCursor: string | null;
       stats?: Record<string, number>;
+      config?: AdminRow;
     }> => {
       await requireAdmin(data.token, data.adminToken);
       const { db } = await import("./server/db.server");
@@ -113,7 +117,12 @@ export const adminList = createServerFn({ method: "POST" })
       }
 
       if (data.resource === "config") {
-        return { rows: [await loadConfig() as unknown as Record<string, unknown>], nextCursor: null };
+        const config = await loadConfig();
+        const flat: AdminRow = {};
+        for (const [key, value] of Object.entries(config)) {
+          flat[key] = Array.isArray(value) ? value.join(",") : (value as string | number | boolean);
+        }
+        return { rows: [flat], nextCursor: null, config: flat };
       }
 
       if (data.resource === "users") {
@@ -130,7 +139,7 @@ export const adminList = createServerFn({ method: "POST" })
           );
         }
         const { data: rows } = await q;
-        return { rows: (rows ?? []) as Record<string, unknown>[], nextCursor: null };
+        return { rows: (rows ?? []) as unknown as AdminRow[], nextCursor: null };
       }
 
       if (data.resource === "withdrawals") {
@@ -139,7 +148,7 @@ export const adminList = createServerFn({ method: "POST" })
           .select("id, user_id, tokens, net_usd, fee_usd, wallet_address, status, tx_id, created_at")
           .order("created_at", { ascending: false })
           .limit(50);
-        return { rows: (rows ?? []) as Record<string, unknown>[], nextCursor: null };
+        return { rows: (rows ?? []) as unknown as AdminRow[], nextCursor: null };
       }
 
       if (data.resource === "tasks") {
@@ -148,7 +157,7 @@ export const adminList = createServerFn({ method: "POST" })
           .select("id, group_name, kind, title, url, chat_id, reward, wait_secs, active, sort_order")
           .order("sort_order", { ascending: true })
           .limit(100);
-        return { rows: (rows ?? []) as Record<string, unknown>[], nextCursor: null };
+        return { rows: (rows ?? []) as unknown as AdminRow[], nextCursor: null };
       }
 
       if (data.resource === "codes") {
@@ -157,7 +166,7 @@ export const adminList = createServerFn({ method: "POST" })
           .select("code, reward, max_uses, used_count, active, expires_at")
           .order("created_at", { ascending: false })
           .limit(100);
-        return { rows: (rows ?? []) as Record<string, unknown>[], nextCursor: null };
+        return { rows: (rows ?? []) as unknown as AdminRow[], nextCursor: null };
       }
 
       if (data.resource === "audit") {
@@ -166,7 +175,17 @@ export const adminList = createServerFn({ method: "POST" })
           .select("id, actor, action, target, meta, created_at")
           .order("id", { ascending: false })
           .limit(100);
-        return { rows: (rows ?? []) as Record<string, unknown>[], nextCursor: null };
+        return {
+          rows: (rows ?? []).map((r) => ({
+            id: String(r.id),
+            actor: (r.actor as string) ?? "",
+            action: (r.action as string) ?? "",
+            target: (r.target as string) ?? null,
+            meta: JSON.stringify(r.meta ?? {}),
+            created_at: (r.created_at as string) ?? "",
+          })),
+          nextCursor: null,
+        };
       }
 
       return { rows: [], nextCursor: null };
@@ -325,7 +344,7 @@ export const adminAction = createServerFn({ method: "POST" })
         const id = str("id", 64);
         if (id) await client.from("tasks").update(patch).eq("id", id);
         else await client.from("tasks").insert(patch);
-        await audit(admin.telegram_id, "upsertTask", id || patch["title"] as string, {});
+        await audit(admin.telegram_id, "upsertTask", id || String(patch["title"] ?? ""), {});
         return { ok: true, message: "Task saved." };
       }
 
