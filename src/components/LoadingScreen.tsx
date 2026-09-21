@@ -1,5 +1,5 @@
 import { RefreshCw, WifiOff, ShieldAlert, Send, Wrench } from "lucide-react";
-import logo from "@/assets/bear-farm-logo.png.asset.json";
+import logo from "@/assets/bear-farm-logo.png";
 import type { AuthErrorInfo, AuthStatus } from "@/lib/auth-context";
 
 const STAGE_TEXT: Record<string, string> = {
@@ -24,7 +24,7 @@ export function LoadingScreen({
       <div className="relative">
         <span className="absolute inset-0 rounded-full bg-primary/25 animate-pulse-ring" />
         <img
-          src={logo.url}
+          src={logo}
           alt="Bear Farm"
           className={`relative size-40 drop-shadow-2xl ${isError ? "opacity-60 grayscale" : "animate-float"}`}
         />

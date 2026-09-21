@@ -1,5 +1,5 @@
 import { Coins, ShieldCheck } from "lucide-react";
-import logo from "@/assets/bear-farm-logo.png.asset.json";
+import logo from "@/assets/bear-farm-logo.png";
 import { formatTokens, formatUsd, tokensToUsd } from "@/lib/format";
 import type { AppConfig, UserDoc } from "@/lib/types";
 
@@ -39,7 +39,7 @@ export function BalanceCard({ user, config }: { user: UserDoc; config: AppConfig
     <div className="relative mx-4 mt-4 overflow-hidden farm-card p-5">
       <div className="pointer-events-none absolute -top-8 -right-8 size-32 rounded-full bg-primary/10 blur-2xl" />
       <img
-        src={logo.url}
+        src={logo}
         alt=""
         className="pointer-events-none absolute -right-6 -bottom-8 size-32 opacity-20"
       />
