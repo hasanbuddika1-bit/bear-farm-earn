@@ -127,8 +127,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearSessionToken();
         readyRef.current = false;
         const e = err as { message?: string };
+        const message = e?.message ?? "";
         const offline = typeof navigator !== "undefined" && navigator.onLine === false;
-        const isNetwork = offline || /network|fetch|timeout|failed to fetch/i.test(e?.message ?? "");
+        const isNetwork = offline || /network|fetch|timeout|failed to fetch/i.test(message);
+        const isTelegramSessionError =
+          /telegram session expired|invalid telegram session|telegram signature check failed/i.test(message);
         setStatus("error");
         setError(
           isNetwork
@@ -137,10 +140,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 title: "Network error",
                 message: "We could not reach the Bear Farm servers. Please try again.",
               }
+            : isTelegramSessionError
+              ? {
+                  kind: "telegram",
+                  title: "Telegram session expired",
+                  message: "Close this window, then open Bear Farm again from the bot.",
+                }
             : {
                 kind: "server",
                 title: "Could not start",
-                message: e?.message ?? "Unexpected error while verifying your Telegram account.",
+                message: message || "Unexpected error while verifying your Telegram account.",
               },
         );
       }
