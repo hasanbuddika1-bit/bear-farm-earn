@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 const SESSION_HOURS = 2;
+const DEFAULT_CONFIG_ARRAY_KEYS = ["dailyRewards"];
 
 /** Only JSON-safe scalars cross the wire to the admin screen. */
 export type AdminRow = Record<string, string | number | boolean | null>;
@@ -297,10 +298,22 @@ export const adminAction = createServerFn({ method: "POST" })
     const client = db();
     const p = data.payload;
     const str = (key: string, max = 200) => String(p[key] ?? "").trim().slice(0, max);
+    // The admin screen uses friendly names; normalise them here.
+    const targetId =
+      str("id", 64) || str("userId", 64) || str("withdrawalId", 64) || str("taskId", 64) || str("codeId", 64);
+    const aliases: Record<string, string> = {
+      createTask: "upsertTask",
+      updateTask: "upsertTask",
+      createRewardCode: "createCode",
+      disableRewardCode: "disableCode",
+      suspend: "suspendUser",
+      unsuspend: "unsuspendUser",
+    };
+    const action = aliases[data.action] ?? data.action;
 
-    switch (data.action) {
+    switch (action) {
       case "approveWithdrawal": {
-        const id = str("id", 64);
+        const id = targetId;
         const txId = str("txId", 120);
         if (!txId) throw new Error("Transaction ID is required.");
         const wd = await client
@@ -345,7 +358,7 @@ export const adminAction = createServerFn({ method: "POST" })
       }
 
       case "rejectWithdrawal": {
-        const id = str("id", 64);
+        const id = targetId;
         const reason = str("reason", 200) || "Rejected by admin";
         const wd = await client
           .from("withdrawals")
@@ -380,8 +393,8 @@ export const adminAction = createServerFn({ method: "POST" })
 
       case "suspendUser":
       case "unsuspendUser": {
-        const id = str("id", 64);
-        const suspend = data.action === "suspendUser";
+        const id = targetId;
+        const suspend = action === "suspendUser";
         await client
           .from("users")
           .update({
@@ -394,7 +407,7 @@ export const adminAction = createServerFn({ method: "POST" })
       }
 
       case "adjustBalance": {
-        const id = str("id", 64);
+        const id = targetId;
         const amount = Math.floor(Number(p["amount"] ?? 0));
         if (!amount) throw new Error("Enter an amount.");
         await client.rpc("bf_apply_amount", {
@@ -409,27 +422,58 @@ export const adminAction = createServerFn({ method: "POST" })
       }
 
       case "upsertTask": {
-        const patch: Record<string, unknown> = {
-          group_name: ["daily", "main", "partner"].includes(str("group", 16)) ? str("group", 16) : "main",
-          kind: ["channel", "mini_app", "link"].includes(str("kind", 16)) ? str("kind", 16) : "link",
-          title: str("title", 120),
-          description: str("description", 300),
-          url: str("url", 300),
-          chat_id: str("chatId", 64) || null,
-          reward: Math.max(0, Math.floor(Number(p["reward"] ?? 0))),
-          wait_secs: Math.min(600, Math.max(3, Math.floor(Number(p["waitSecs"] ?? 5)))),
-          active: p["active"] !== false,
-          sort_order: Math.floor(Number(p["sortOrder"] ?? 0)),
+        const kindMap: Record<string, string> = {
+          telegram_channel: "channel",
+          channel: "channel",
+          mini_app: "mini_app",
+          link: "link",
         };
-        const id = str("id", 64);
-        if (id) await client.from("tasks").update(patch).eq("id", id);
-        else await client.from("tasks").insert(patch);
+        const id = targetId;
+        const patch: Record<string, unknown> = {};
+        if (p["group"] !== undefined) {
+          patch["group_name"] = ["daily", "main", "partner"].includes(str("group", 16))
+            ? str("group", 16)
+            : "main";
+        }
+        if (p["kind"] !== undefined) patch["kind"] = kindMap[str("kind", 24)] ?? "link";
+        if (p["title"] !== undefined) patch["title"] = str("title", 120);
+        if (p["description"] !== undefined) patch["description"] = str("description", 300);
+        if (p["url"] !== undefined) patch["url"] = str("url", 300);
+        if (p["chatId"] !== undefined) patch["chat_id"] = str("chatId", 64) || null;
+        if (p["reward"] !== undefined) patch["reward"] = Math.max(0, Math.floor(Number(p["reward"])));
+        if (p["waitSecs"] !== undefined) {
+          patch["wait_secs"] = Math.min(600, Math.max(3, Math.floor(Number(p["waitSecs"]))));
+        }
+        if (p["active"] !== undefined) patch["active"] = Boolean(p["active"]);
+        if (p["sortOrder"] !== undefined) patch["sort_order"] = Math.floor(Number(p["sortOrder"]));
+
+        if (id) {
+          if (Object.keys(patch).length === 0) throw new Error("Nothing to update.");
+          await client.from("tasks").update(patch).eq("id", id);
+        } else {
+          if (!patch["title"] || !patch["url"]) throw new Error("Title and URL are required.");
+          if (patch["kind"] === "channel" && !patch["chat_id"]) {
+            throw new Error("Channel tasks need the channel chat ID.");
+          }
+          await client.from("tasks").insert({
+            group_name: patch["group_name"] ?? "main",
+            kind: patch["kind"] ?? "link",
+            title: patch["title"],
+            description: patch["description"] ?? "",
+            url: patch["url"],
+            chat_id: patch["chat_id"] ?? null,
+            reward: patch["reward"] ?? 0,
+            wait_secs: patch["wait_secs"] ?? 5,
+            active: patch["active"] ?? true,
+            sort_order: patch["sort_order"] ?? 0,
+          });
+        }
         await audit(admin.telegram_id, "upsertTask", id || String(patch["title"] ?? ""), {});
         return { ok: true, message: "Task saved." };
       }
 
       case "deleteTask": {
-        const id = str("id", 64);
+        const id = targetId;
         await client.from("tasks").update({ active: false }).eq("id", id);
         await audit(admin.telegram_id, "deleteTask", id, {});
         return { ok: true, message: "Task disabled." };
@@ -441,7 +485,7 @@ export const adminAction = createServerFn({ method: "POST" })
         const insert = await client.from("reward_codes").insert({
           code,
           reward: Math.max(1, Math.floor(Number(p["reward"] ?? 0))),
-          max_uses: Math.max(1, Math.floor(Number(p["maxUses"] ?? 1))),
+          max_uses: Math.max(1, Math.floor(Number(p["maxUses"] ?? p["maxClaims"] ?? 1))),
           expires_at: p["expiresAt"] ? new Date(Number(p["expiresAt"])).toISOString() : null,
         });
         if (insert.error) throw new Error("That code already exists.");
@@ -450,14 +494,23 @@ export const adminAction = createServerFn({ method: "POST" })
       }
 
       case "disableCode": {
-        const code = str("code", 32).toUpperCase();
+        const code = (str("code", 32) || targetId).toUpperCase();
         await client.from("reward_codes").update({ active: false }).eq("code", code);
         await audit(admin.telegram_id, "disableCode", code, {});
         return { ok: true, message: "Code disabled." };
       }
 
       case "updateConfig": {
-        const patch = (p["config"] ?? {}) as Record<string, unknown>;
+        const single = str("key", 60);
+        const patch = single
+          ? {
+              [single]: Array.isArray(DEFAULT_CONFIG_ARRAY_KEYS) && DEFAULT_CONFIG_ARRAY_KEYS.includes(single)
+                ? str("value", 200)
+                    .split(",")
+                    .map((v) => Number(v.trim()))
+                : str("value", 300),
+            }
+          : ((p["config"] ?? {}) as Record<string, unknown>);
         const current = await loadConfig();
         const next: Record<string, unknown> = { ...current };
         for (const [key, value] of Object.entries(patch)) {
@@ -483,7 +536,7 @@ export const adminAction = createServerFn({ method: "POST" })
           .from("app_config")
           .upsert({ id: "default", data: next, updated_at: new Date().toISOString() });
         invalidateConfigCache();
-        await audit(admin.telegram_id, "updateConfig", null, { keys: Object.keys(patch) });
+        await audit(admin.telegram_id, "updateConfig", single || null, { keys: Object.keys(patch) });
         return { ok: true, message: "Settings saved." };
       }
 
