@@ -89,8 +89,7 @@ export const adminList = createServerFn({ method: "POST" })
     }): Promise<{
       rows: AdminRow[];
       nextCursor: string | null;
-      stats?: Record<string, number>;
-      config?: AdminRow;
+      stats?: Record<string, number> | undefined;
     }> => {
       await requireAdmin(data.token, data.adminToken);
       const { db } = await import("./server/db.server");
