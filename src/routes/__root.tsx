@@ -11,10 +11,10 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
-import { AuthProvider, useAuth } from "../lib/auth-context";
-import { LoadingScreen, SuspendedScreen } from "../components/LoadingScreen";
-import { BottomNav } from "../components/BottomNav";
+import { reportLovableError } from "@/lib/lovable-error-reporting";
+import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { LoadingScreen, SuspendedScreen } from "@/components/LoadingScreen";
+import { BottomNav } from "@/components/BottomNav";
 
 function NotFoundComponent() {
   return (
