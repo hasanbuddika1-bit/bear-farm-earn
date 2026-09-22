@@ -80,10 +80,19 @@ export async function verifyInitData(
   };
 }
 
-export function miniAppButton(label = "🐻 Open mini app") {
+export function miniAppButton(label = "🐻 Open Bear Farm") {
   return {
     inline_keyboard: [
-      [{ text: label, url: `https://t.me/${process.env["BEARFARM_BOT_USERNAME"] ?? "Bear_Farmbot"}?startapp=1` }],
+      [
+        {
+          text: label,
+          url: `https://t.me/${process.env["BEARFARM_BOT_USERNAME"] ?? "Bear_Farmbot"}?startapp=1`,
+        },
+      ],
+      [
+        { text: "📣 Community", url: "https://t.me/bearfarmCommunity" },
+        { text: "💸 Payouts", url: "https://t.me/bearfarm_pay_out" },
+      ],
     ],
   };
 }

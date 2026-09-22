@@ -30,9 +30,18 @@ export const Route = createFileRoute("/tasks")({
   component: TasksPage,
 });
 
+const TASK_TABS = [
+  { key: "daily", label: "Daily", emoji: "🗓️" },
+  { key: "main", label: "Main", emoji: "📢" },
+  { key: "partner", label: "Partner", emoji: "🤝" },
+] as const;
+
+type TaskTab = (typeof TASK_TABS)[number]["key"];
+
 function TasksPage() {
   const { config, user } = useAuth();
   const qc = useQueryClient();
+  const [tab, setTab] = useState<TaskTab>("daily");
   const tasksQuery = useQuery({
     queryKey: ["tasks"],
     queryFn: () => api.listTasks(),
@@ -66,7 +75,28 @@ function TasksPage() {
         </p>
       </div>
 
-      <div className="mx-4 mt-3">
+      {/* Horizontal tab switcher — one group open at a time */}
+      <div className="sticky top-0 z-10 mt-3 bg-background/90 px-4 py-2 backdrop-blur">
+        <div className="flex gap-2 overflow-x-auto">
+          {TASK_TABS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTab(t.key)}
+              className={`flex-1 rounded-xl border px-3 py-2 font-display text-xs font-extrabold whitespace-nowrap transition ${
+                tab === t.key
+                  ? "border-accent bg-accent/20 text-accent"
+                  : "border-border bg-secondary/40 text-muted-foreground"
+              }`}
+            >
+              <span className="mr-1">{t.emoji}</span>
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mx-4 mt-2">
         <GuideBox
           title="Task guide 📋"
           points={[
@@ -78,61 +108,63 @@ function TasksPage() {
         />
       </div>
 
-      {/* Daily tasks */}
-      <section className="mt-4 px-4">
-        <SectionTitle icon={<Send className="size-4 text-accent" />} title="Daily tasks" />
-        <div className="space-y-2">
-          <DailyTaskRow
-            emoji="📣"
-            title="Visit the community channel"
-            reward={config.dailyTaskCommunityReward}
-            symbol={config.tokenSymbol}
-            actionLabel="Open"
-            onAction={() => openExternal(config.communityChannelUrl)}
-            claiming={claimDaily.isPending}
-            onClaim={() => claimDaily.mutate("community")}
-          />
-          <DailyTaskRow
-            emoji="💸"
-            title="Visit the payment channel"
-            reward={config.dailyTaskPaymentReward}
-            symbol={config.tokenSymbol}
-            actionLabel="Open"
-            onAction={() => openExternal(config.paymentChannelUrl)}
-            claiming={claimDaily.isPending}
-            onClaim={() => claimDaily.mutate("payment")}
-          />
-          <DailyTaskRow
-            emoji="🤝"
-            title="Invite 1 friend today"
-            reward={config.dailyReferralTaskReward}
-            symbol={config.tokenSymbol}
-            actionLabel="Share"
-            actionIcon={<Share2 className="size-4" />}
-            onAction={() =>
-              shareReferral(
-                `${config.referralLink}?startapp=${user.referralCode}`,
-                "🐻🌾 Join Bear Farm and earn USDT!",
-              )
-            }
-            claiming={claimDaily.isPending}
-            onClaim={() => claimDaily.mutate("referral")}
-          />
-        </div>
-      </section>
-
-      <TaskGroupSection
-        title="Main tasks"
-        icon={<Send className="size-4 text-primary" />}
-        tasks={data?.main ?? []}
-        loading={tasksQuery.isLoading}
-      />
-      <TaskGroupSection
-        title="Partner tasks"
-        icon={<Handshake className="size-4 text-usdt" />}
-        tasks={data?.partner ?? []}
-        loading={tasksQuery.isLoading}
-      />
+      {tab === "daily" ? (
+        <section className="mt-4 px-4">
+          <SectionTitle icon={<Send className="size-4 text-accent" />} title="Daily tasks" />
+          <div className="space-y-2">
+            <DailyTaskRow
+              emoji="📣"
+              title="Visit the community channel"
+              reward={config.dailyTaskCommunityReward}
+              symbol={config.tokenSymbol}
+              actionLabel="Open"
+              onAction={() => openExternal(config.communityChannelUrl)}
+              claiming={claimDaily.isPending}
+              onClaim={() => claimDaily.mutate("community")}
+            />
+            <DailyTaskRow
+              emoji="💸"
+              title="Visit the payment channel"
+              reward={config.dailyTaskPaymentReward}
+              symbol={config.tokenSymbol}
+              actionLabel="Open"
+              onAction={() => openExternal(config.paymentChannelUrl)}
+              claiming={claimDaily.isPending}
+              onClaim={() => claimDaily.mutate("payment")}
+            />
+            <DailyTaskRow
+              emoji="🤝"
+              title="Invite 1 friend today"
+              reward={config.dailyReferralTaskReward}
+              symbol={config.tokenSymbol}
+              actionLabel="Share"
+              actionIcon={<Share2 className="size-4" />}
+              onAction={() =>
+                shareReferral(
+                  `${config.referralLink}?startapp=${user.referralCode}`,
+                  "🐻🌾 Join Bear Farm and earn USDT!",
+                )
+              }
+              claiming={claimDaily.isPending}
+              onClaim={() => claimDaily.mutate("referral")}
+            />
+          </div>
+        </section>
+      ) : tab === "main" ? (
+        <TaskGroupSection
+          title="Main tasks"
+          icon={<Send className="size-4 text-primary" />}
+          tasks={data?.main ?? []}
+          loading={tasksQuery.isLoading}
+        />
+      ) : (
+        <TaskGroupSection
+          title="Partner tasks"
+          icon={<Handshake className="size-4 text-usdt" />}
+          tasks={data?.partner ?? []}
+          loading={tasksQuery.isLoading}
+        />
+      )}
     </div>
   );
 }
