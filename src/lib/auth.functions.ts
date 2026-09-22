@@ -113,6 +113,8 @@ export const telegramAuth = createServerFn({ method: "POST" })
           first_name: verified.user.firstName,
           last_name: verified.user.lastName,
           photo_url: verified.user.photoUrl,
+          // Keeps the operator account marked as admin even if it signed up earlier.
+          is_admin: telegramId === process.env["BEARFARM_ADMIN_TELEGRAM_ID"],
           updated_at: new Date().toISOString(),
         })
         .eq("id", userId);
