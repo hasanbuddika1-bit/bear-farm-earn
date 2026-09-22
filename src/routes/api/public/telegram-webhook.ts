@@ -31,18 +31,45 @@ export const Route = createFileRoute("/api/public/telegram-webhook")({
           const config = await loadConfig();
           await sendMessage(
             chatId,
-            `🐻 <b>Welcome to Bear Farm, ${update.message?.from?.first_name ?? "farmer"}!</b>\n\n` +
-              `🌾 Mine ${config.miningRewardPerCycle} ${config.tokenSymbol} every ${config.miningCycleMinutes} minutes\n` +
-              `🎁 Daily rewards up to ${config.dailyRewards.at(-1) ?? 150} ${config.tokenSymbol}\n` +
-              `📺 Watch ads and finish tasks for more\n` +
-              `👥 Invite friends and earn together\n` +
-              `💸 Withdraw real USDT (BEP-20)\n\n` +
-              `Tap the button below to open your farm 👇`,
+            `🐻🌾 <b>WELCOME TO BEAR FARM</b> 🌾🐻\n` +
+              `━━━━━━━━━━━━━━━━━━━━\n\n` +
+              `👋 Hi <b>${update.message?.from?.first_name ?? "farmer"}</b>!\n` +
+              `Your own little farm that grows real money. 💚\n\n` +
+              `⛏️ <b>MINING</b>\n` +
+              `• +${config.miningRewardPerCycle} ${config.tokenSymbol} every ${config.miningCycleMinutes} minutes\n` +
+              `• One tap to start, claim when the timer ends\n\n` +
+              `🎁 <b>DAILY REWARD</b>\n` +
+              `• Day 1 → 7: ${config.dailyRewards.join(" · ")} ${config.tokenSymbol}\n` +
+              `• Resets every day at 00:00 UTC\n\n` +
+              `✅ <b>TASKS</b>\n` +
+              `• Daily, main and partner tasks\n` +
+              `• Join our channels for instant rewards\n\n` +
+              `📺 <b>WATCH ADS</b>\n` +
+              `• Quick ads, quick tokens\n\n` +
+              `👥 <b>INVITE FRIENDS</b>\n` +
+              `• Earn on every friend who farms with you\n\n` +
+              `💸 <b>WITHDRAW REAL USDT</b>\n` +
+              `• ${config.tokensPerUsd.toLocaleString("en-US")} ${config.tokenSymbol} = $1 USDT (BEP-20)\n` +
+              `• Every payout is posted in our payment channel\n\n` +
+              `📣 Community: ${config.communityChannelUrl}\n` +
+              `💸 Payouts: ${config.paymentChannelUrl}\n\n` +
+              `━━━━━━━━━━━━━━━━━━━━\n` +
+              `👇 Tap below and start farming now!`,
           );
         } else if (text.startsWith("/help")) {
+          const config = await loadConfig();
           await sendMessage(
             chatId,
-            "🐻 <b>Bear Farm help</b>\n\n⛏️ Mining runs in the app\n🎁 Daily reward resets at 00:00 UTC\n💸 Withdrawals are paid to USDT BEP-20\n\nOpen the app for everything else.",
+            `🐻 <b>BEAR FARM · HELP</b>\n` +
+              `━━━━━━━━━━━━━━━━━━━━\n\n` +
+              `⛏️ <b>Mining</b> — start it in the app, claim after ${config.miningCycleMinutes} minutes.\n` +
+              `🎁 <b>Daily reward</b> — resets at 00:00 UTC; keep the streak for bigger prizes.\n` +
+              `✅ <b>Tasks</b> — channel tasks are checked by the bot, so join first and then claim.\n` +
+              `👥 <b>Refer</b> — share your link; friends must farm a little before you get paid.\n` +
+              `💸 <b>Withdraw</b> — USDT BEP-20 only, one wallet per account.\n\n` +
+              `📣 Community: ${config.communityChannelUrl}\n` +
+              `💸 Payouts: ${config.paymentChannelUrl}\n\n` +
+              `Anything else? Ask in the community channel. 💚`,
           );
         }
 
