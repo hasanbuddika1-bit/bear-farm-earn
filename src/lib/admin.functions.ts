@@ -50,13 +50,24 @@ export const adminLogin = createServerFn({ method: "POST" })
     const { row } = await requireUser(data.token, { allowSuspended: true });
     await rateLimit(`adminlogin:${row.id}`, 6, 900);
 
-    const adminTelegramId = process.env["BEARFARM_ADMIN_TELEGRAM_ID"];
-    const username = process.env["BEARFARM_ADMIN_USERNAME"];
-    const password = process.env["BEARFARM_ADMIN_PASSWORD"];
+    const adminTelegramId = process.env["BEARFARM_ADMIN_TELEGRAM_ID"]?.trim();
+    const username = process.env["BEARFARM_ADMIN_USERNAME"]?.trim();
+    const password = process.env["BEARFARM_ADMIN_PASSWORD"]?.trim();
     if (!adminTelegramId || !username || !password) throw new Error("Admin access is not configured.");
 
-    const ok =
-      row.telegram_id === adminTelegramId && data.username === username && data.password === password;
+    // Mobile keyboards auto-capitalise and add trailing spaces: usernames are
+    // case-insensitive, both fields are trimmed, and compared in constant time.
+    const digest = async (v: string) =>
+      new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v)));
+    const same = async (a: string, b: string) => {
+      const [x, y] = await Promise.all([digest(a), digest(b)]);
+      let diff = 0;
+      for (let i = 0; i < x.length; i++) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
+      return diff === 0;
+    };
+    const userOk = await same(data.username.trim().toLowerCase(), username.toLowerCase());
+    const passOk = await same(data.password.trim(), password);
+    const ok = row.telegram_id === adminTelegramId && userOk && passOk;
     if (!ok) {
       await audit(row.telegram_id, "admin_login_failed", null, { username: data.username });
       void notifyAdmin("🚨 Failed admin login attempt.");

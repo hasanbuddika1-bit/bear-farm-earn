@@ -149,6 +149,9 @@ function AdminLogin({ onDone }: { onDone: () => void }) {
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Username"
           autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           className="mt-4 w-full rounded-xl border border-input bg-input/50 px-3 py-3 text-sm outline-none focus:border-primary"
         />
         <input
@@ -157,6 +160,9 @@ function AdminLogin({ onDone }: { onDone: () => void }) {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
           autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           className="mt-2 w-full rounded-xl border border-input bg-input/50 px-3 py-3 text-sm outline-none focus:border-primary"
         />
         <PopButton
