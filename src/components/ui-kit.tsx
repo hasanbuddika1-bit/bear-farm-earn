@@ -48,7 +48,7 @@ export function PopButton({
   className?: string;
 }) {
   const styles: Record<string, string> = {
-    primary: "bg-primary text-primary-foreground",
+    primary: "bg-[image:var(--gradient-gold)] text-primary-foreground",
     accent: "bg-accent text-accent-foreground",
     muted: "bg-secondary text-secondary-foreground",
     usdt: "bg-usdt text-primary-foreground",

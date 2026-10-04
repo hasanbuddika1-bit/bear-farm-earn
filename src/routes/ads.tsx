@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlayCircle, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -11,8 +11,12 @@ import { hapticNotify, openExternal } from "@/lib/telegram";
 import { Card, EmptyState, GuideBox, PopButton, SectionTitle } from "@/components/ui-kit";
 import type { AdNetworkDoc } from "@/lib/types";
 
+// Hidden until the Adsgram account is approved; remove beforeLoad to bring the tab back.
 export const Route = createFileRoute("/ads")({
   ssr: false,
+  beforeLoad: () => {
+    throw redirect({ to: "/" });
+  },
   head: () => ({
     meta: [
       { title: "Watch Ads — Bear Farm" },

@@ -67,7 +67,7 @@ export function MiningCard({
   }
 
   return (
-    <div className="relative mx-4 mt-4 overflow-hidden farm-card p-5">
+    <div className="relative mx-4 mt-4 overflow-hidden farm-hero p-5">
       {pop > 0 ? (
         <span
           key={pop}
@@ -92,6 +92,36 @@ export function MiningCard({
         >
           {running ? "MINING" : finished ? "READY TO CLAIM" : "IDLE"}
         </span>
+      </div>
+
+      {/* Little farm field: the bear works while mining runs, wheat grows with progress */}
+      <div className="relative mt-4 h-24 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-b from-secondary/40 to-background/80">
+        <div className="absolute inset-x-0 bottom-0 h-7 bg-wood/60" />
+        <div className="absolute inset-x-3 bottom-5 flex items-end justify-between">
+          {Array.from({ length: 9 }, (_, i) => (
+            <span
+              key={i}
+              className="animate-sway text-xl transition-transform duration-1000"
+              style={{
+                transform: `scale(${0.35 + (progress / 100) * 0.75})`,
+                animationDelay: `${(i % 4) * 0.25}s`,
+                opacity: progress > i * 8 ? 1 : 0.35,
+              }}
+            >
+              🌾
+            </span>
+          ))}
+        </div>
+        <div className={`absolute bottom-5 left-1/2 flex -translate-x-1/2 items-end ${running ? "animate-bob" : ""}`}>
+          <span className="text-4xl drop-shadow-[0_6px_10px_var(--color-background)]">🐻</span>
+          <span className={`-ml-2 mb-3 text-2xl ${running ? "animate-dig" : "opacity-60"}`}>⛏️</span>
+        </div>
+        {finished ? (
+          <span className="absolute top-2 right-3 text-2xl animate-float">🍯</span>
+        ) : null}
+        {running ? (
+          <span className="absolute top-2 left-3 text-lg animate-float">✨</span>
+        ) : null}
       </div>
 
       <div className="mt-4 flex items-center gap-4">
