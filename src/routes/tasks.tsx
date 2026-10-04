@@ -154,14 +154,14 @@ function TasksPage() {
         <TaskGroupSection
           title="Main tasks"
           icon={<Send className="size-4 text-primary" />}
-          tasks={data?.main ?? []}
+          tasks={sortDone(data?.main ?? [])}
           loading={tasksQuery.isLoading}
         />
       ) : (
         <TaskGroupSection
           title="Partner tasks"
           icon={<Handshake className="size-4 text-usdt" />}
-          tasks={data?.partner ?? []}
+          tasks={sortDone(data?.partner ?? [])}
           loading={tasksQuery.isLoading}
         />
       )}
@@ -291,7 +291,7 @@ function TaskRow({ task }: { task: TaskDoc }) {
 
   return (
     <Card className="flex items-center gap-3">
-      <span className="text-2xl">{isChannel ? "📢" : task.kind === "mini_app" ? "🎮" : "🔗"}</span>
+      <TaskIcon url={task.iconUrl ?? ""} fallback={isChannel ? "📢" : task.kind === "mini_app" ? "🎮" : "🔗"} />
       <div className="min-w-0 flex-1">
         <p className="truncate font-display text-sm font-bold">{task.title}</p>
         {task.description ? (
@@ -322,5 +322,24 @@ function TaskRow({ task }: { task: TaskDoc }) {
         </>
       )}
     </Card>
+  );
+}
+
+/** Unfinished tasks first, completed ones sink to the bottom. */
+function sortDone(tasks: TaskDoc[]): TaskDoc[] {
+  return [...tasks].sort((a, b) => Number(Boolean(a.claimed)) - Number(Boolean(b.claimed)));
+}
+
+function TaskIcon({ url, fallback }: { url: string; fallback: string }) {
+  const [broken, setBroken] = useState(false);
+  if (!url || broken) return <span className="text-2xl">{fallback}</span>;
+  return (
+    <img
+      src={url}
+      alt=""
+      referrerPolicy="no-referrer"
+      onError={() => setBroken(true)}
+      className="size-10 shrink-0 rounded-xl object-cover"
+    />
   );
 }

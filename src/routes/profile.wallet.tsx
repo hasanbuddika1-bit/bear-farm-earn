@@ -97,7 +97,23 @@ function WalletPage() {
         </h1>
       </div>
 
-      <Card className="mx-4 mt-3">
+      <section className="mt-3 px-4">
+        <SectionTitle icon={<Calculator className="size-4 text-accent" />} title="Converter" />
+        <Card>
+          <input
+            value={convert}
+            inputMode="numeric"
+            onChange={(e) => setConvert(e.target.value.replace(/[^0-9]/g, ""))}
+            placeholder={`Tokens → USD (your balance: ${formatTokens(user.balance)})`}
+            className="w-full rounded-xl border border-input bg-input/50 px-3 py-3 text-sm outline-none focus:border-primary"
+          />
+          <p className="mt-2 text-center font-display text-lg font-extrabold text-usdt">
+            {formatTokens(Number(convert) || user.balance)} {config.tokenSymbol} ={" "}
+            {formatUsd(tokensToUsd(Number(convert) || user.balance, config.tokensPerUsd))}
+          </p>
+        </Card>
+      </section>
+      <Card className="mx-4 mt-4">
         <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
           Available balance
         </p>
@@ -176,22 +192,6 @@ function WalletPage() {
         <StatPill label="Pending" value={formatUsd(stats.data?.pendingUsd ?? 0)} tone="gold" />
       </div>
 
-      <section className="mt-4 px-4">
-        <SectionTitle icon={<Calculator className="size-4 text-accent" />} title="Converter" />
-        <Card>
-          <input
-            value={convert}
-            inputMode="numeric"
-            onChange={(e) => setConvert(e.target.value.replace(/[^0-9]/g, ""))}
-            placeholder={`Tokens → USD`}
-            className="w-full rounded-xl border border-input bg-input/50 px-3 py-3 text-sm outline-none focus:border-primary"
-          />
-          <p className="mt-2 text-center font-display text-lg font-extrabold text-usdt">
-            {formatTokens(Number(convert) || 0)} {config.tokenSymbol} ={" "}
-            {formatUsd(tokensToUsd(Number(convert) || 0, config.tokensPerUsd))}
-          </p>
-        </Card>
-      </section>
 
       <section className="mt-4 px-4">
         <SectionTitle icon={<History className="size-4 text-primary" />} title="Withdrawal history" />
