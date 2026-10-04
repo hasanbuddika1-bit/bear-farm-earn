@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { AdNetworkRow } from "./server/ads.server";
 
 import type { AdNetworkDoc } from "./types";
 
@@ -10,7 +11,7 @@ export const listAdNetworks = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ networks: AdNetworkDoc[]; adsEnabled: boolean; watchedToday: number }> => {
     const { requireUser } = await import("./server/user.server");
     const { loadConfig } = await import("./server/config.server");
-    const { AD_NETWORK_COLUMNS, type AdNetworkRow } = await import("./server/ads.server");
+    const { AD_NETWORK_COLUMNS } = await import("./server/ads.server");
     const { db } = await import("./server/db.server");
 
     const { row } = await requireUser(data.token);
@@ -82,7 +83,7 @@ export const startAdSession = createServerFn({ method: "POST" })
       const { requireUser } = await import("./server/user.server");
       const { loadConfig } = await import("./server/config.server");
       const { rateLimit } = await import("./server/session.server");
-      const { AD_NETWORK_COLUMNS, type AdNetworkRow } = await import("./server/ads.server");
+      const { AD_NETWORK_COLUMNS } = await import("./server/ads.server");
       const { db } = await import("./server/db.server");
 
       const { row } = await requireUser(data.token);
