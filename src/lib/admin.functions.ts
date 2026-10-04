@@ -209,7 +209,7 @@ export const adminList = createServerFn({ method: "POST" })
       if (data.resource === "tasks") {
         const { data: rows } = await client
           .from("tasks")
-          .select("id, group_name, kind, title, url, chat_id, reward, wait_secs, active, sort_order")
+          .select("id, group_name, kind, title, url, chat_id, reward, wait_secs, active, sort_order, icon_url")
           .order("sort_order", { ascending: true })
           .limit(100);
         return {
@@ -222,7 +222,31 @@ export const adminList = createServerFn({ method: "POST" })
             chatId: (t.chat_id as string) ?? "",
             reward: Number(t.reward),
             waitSecs: Number(t.wait_secs),
+            iconUrl: (t.icon_url as string) ?? "",
             active: Boolean(t.active),
+          })),
+          nextCursor: null,
+        };
+      }
+
+      if (data.resource === "adnetworks") {
+        const { data: rows } = await client
+          .from("ad_networks")
+          .select("id, name, provider, block_id, url, logo_url, reward, daily_limit, cooldown_secs, min_watch_secs, active, sort_order")
+          .order("sort_order", { ascending: true });
+        return {
+          rows: (rows ?? []).map((n) => ({
+            id: n.id as string,
+            name: (n.name as string) ?? "",
+            provider: (n.provider as string) ?? "link",
+            blockId: (n.block_id as string) ?? "",
+            url: (n.url as string) ?? "",
+            logoUrl: (n.logo_url as string) ?? "",
+            reward: Number(n.reward),
+            dailyLimit: Number(n.daily_limit),
+            cooldownSecs: Number(n.cooldown_secs),
+            minWatchSecs: Number(n.min_watch_secs),
+            active: Boolean(n.active),
           })),
           nextCursor: null,
         };
@@ -445,6 +469,7 @@ export const adminAction = createServerFn({ method: "POST" })
         }
         if (p["active"] !== undefined) patch["active"] = Boolean(p["active"]);
         if (p["sortOrder"] !== undefined) patch["sort_order"] = Math.floor(Number(p["sortOrder"]));
+        if (p["iconUrl"] !== undefined) patch["icon_url"] = safeHttpsUrl(str("iconUrl", 300));
 
         if (id) {
           if (Object.keys(patch).length === 0) throw new Error("Nothing to update.");
@@ -465,10 +490,33 @@ export const adminAction = createServerFn({ method: "POST" })
             wait_secs: patch["wait_secs"] ?? 5,
             active: patch["active"] ?? true,
             sort_order: patch["sort_order"] ?? 0,
+            icon_url: patch["icon_url"] ?? null,
           });
         }
         await audit(admin.telegram_id, "upsertTask", id || String(patch["title"] ?? ""), {});
         return { ok: true, message: "Task saved." };
+      }
+
+      case "upsertAdNetwork": {
+        const id = targetId;
+        if (!id) throw new Error("Network ID is required.");
+        const patch: Record<string, unknown> = {};
+        const num = (k: string, min: number, max: number) =>
+          Math.min(max, Math.max(min, Math.floor(Number(p[k]) || 0)));
+        if (p["name"] !== undefined) patch["name"] = str("name", 60);
+        if (p["blockId"] !== undefined) patch["block_id"] = str("blockId", 80) || null;
+        if (p["url"] !== undefined) patch["url"] = safeHttpsUrl(str("url", 300));
+        if (p["logoUrl"] !== undefined) patch["logo_url"] = safeHttpsUrl(str("logoUrl", 300));
+        if (p["reward"] !== undefined) patch["reward"] = num("reward", 1, 1000);
+        if (p["dailyLimit"] !== undefined) patch["daily_limit"] = num("dailyLimit", 0, 500);
+        if (p["cooldownSecs"] !== undefined) patch["cooldown_secs"] = num("cooldownSecs", 0, 86400);
+        if (p["minWatchSecs"] !== undefined) patch["min_watch_secs"] = num("minWatchSecs", 5, 120);
+        if (p["active"] !== undefined) patch["active"] = p["active"] === true || p["active"] === "true";
+        if (Object.keys(patch).length === 0) throw new Error("Nothing to update.");
+        const res = await client.from("ad_networks").update(patch).eq("id", id);
+        if (res.error) throw new Error("Could not save the ad network.");
+        await audit(admin.telegram_id, "upsertAdNetwork", id, patch);
+        return { ok: true, message: "Ad network saved." };
       }
 
       case "deleteTask": {
@@ -549,3 +597,14 @@ export const adminAction = createServerFn({ method: "POST" })
         throw new Error("Unknown action.");
     }
   });
+
+/** Only plain https links are stored (imgbb etc.); anything else is dropped. */
+function safeHttpsUrl(value: string): string | null {
+  if (!value) return null;
+  try {
+    const u = new URL(value);
+    return u.protocol === "https:" ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}

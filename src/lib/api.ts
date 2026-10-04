@@ -26,6 +26,11 @@ import {
   adminLogin as adminLoginFn,
 } from "./admin.functions";
 import {
+  claimAdSession as claimAdSessionFn,
+  listAdNetworks as listAdNetworksFn,
+  startAdSession as startAdSessionFn,
+} from "./ads.functions";
+import {
   getAdminToken,
   getSessionToken,
   notifyBalanceChanged,
@@ -126,6 +131,20 @@ export const api = {
     const result = await claimReferralEarningsFn({
       data: { token: getSessionToken(), idempotencyKey: input.idempotencyKey },
     });
+    notifyBalanceChanged();
+    return result;
+  },
+
+  async listAdNetworks() {
+    return listAdNetworksFn({ data: { token: getSessionToken() } });
+  },
+
+  async startAdSession(input: { networkId: string }) {
+    return startAdSessionFn({ data: { token: getSessionToken(), networkId: input.networkId } });
+  },
+
+  async claimAdSession(input: { sessionId: string }) {
+    const result = await claimAdSessionFn({ data: { token: getSessionToken(), sessionId: input.sessionId } });
     notifyBalanceChanged();
     return result;
   },
