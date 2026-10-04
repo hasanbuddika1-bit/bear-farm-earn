@@ -58,7 +58,7 @@ function ReferPage() {
   });
 
   if (!user || !config) return null;
-  const link = `${config.referralLink}?startapp=${user.referralCode}`;
+  const link = `https://t.me/${config.botUsername}/earn?startapp=${user.referralCode}`;
 
   return (
     <div className="pb-6">

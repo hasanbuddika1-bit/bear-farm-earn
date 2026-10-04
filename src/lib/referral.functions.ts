@@ -61,7 +61,7 @@ export const listReferrals = createServerFn({ method: "POST" })
         active: rows.filter((r) => r.stage === "half" || r.stage === "verified").length,
         unclaimed: Number(row.referral_pot),
         totalEarned: rows.reduce((sum, r) => sum + (r.stage === "fake" ? 0 : r.earned), 0),
-        link: `${config.referralLink}${row.telegram_id}`,
+        link: `https://t.me/${config.botUsername}/earn?startapp=${row.telegram_id}`,
       };
     },
   );

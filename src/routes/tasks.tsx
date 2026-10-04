@@ -141,7 +141,7 @@ function TasksPage() {
               actionIcon={<Share2 className="size-4" />}
               onAction={() =>
                 shareReferral(
-                  `${config.referralLink}?startapp=${user.referralCode}`,
+                  `https://t.me/${config.botUsername}/earn?startapp=${user.referralCode}`,
                   "🐻🌾 Join Bear Farm and earn USDT!",
                 )
               }

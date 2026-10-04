@@ -23,7 +23,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   communityChannelUrl: "https://t.me/bearfarmCommunity",
   paymentChannelUrl: "https://t.me/bearfarm_pay_out",
   botUsername: "Bear_Farmbot",
-  referralLink: "https://t.me/Bear_Farmbot?start=",
+  referralLink: "https://t.me/Bear_Farmbot/earn?startapp=",
   adsEnabled: true,
   maintenance: false,
 };
