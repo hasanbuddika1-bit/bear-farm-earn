@@ -58,66 +58,73 @@
 :root {
   --radius: 1rem;
 
-  /* Meadow / barn palette */
-  --background: oklch(0.24 0.045 148);
-  --foreground: oklch(0.97 0.015 110);
-  --card: oklch(0.3 0.05 150);
-  --card-foreground: oklch(0.97 0.015 110);
-  --popover: oklch(0.27 0.045 150);
-  --popover-foreground: oklch(0.97 0.015 110);
+  /* Honey barn at night — premium dark + honey gold */
+  --background: oklch(0.17 0.018 65);
+  --foreground: oklch(0.96 0.02 85);
+  --card: oklch(0.22 0.024 68);
+  --card-foreground: oklch(0.96 0.02 85);
+  --popover: oklch(0.2 0.022 66);
+  --popover-foreground: oklch(0.96 0.02 85);
 
-  --primary: oklch(0.8 0.17 88); /* farm gold */
-  --primary-foreground: oklch(0.26 0.06 60);
-  --secondary: oklch(0.38 0.06 150);
-  --secondary-foreground: oklch(0.96 0.02 110);
-  --muted: oklch(0.34 0.04 152);
-  --muted-foreground: oklch(0.79 0.03 130);
-  --accent: oklch(0.66 0.17 145); /* leaf green */
-  --accent-foreground: oklch(0.19 0.04 150);
+  --primary: oklch(0.82 0.16 82); /* honey gold */
+  --primary-foreground: oklch(0.22 0.05 60);
+  --secondary: oklch(0.28 0.03 68);
+  --secondary-foreground: oklch(0.95 0.02 85);
+  --muted: oklch(0.27 0.025 68);
+  --muted-foreground: oklch(0.72 0.04 78);
+  --accent: oklch(0.74 0.16 135); /* fresh leaf */
+  --accent-foreground: oklch(0.18 0.04 135);
 
-  --destructive: oklch(0.6 0.21 25);
+  --destructive: oklch(0.62 0.21 25);
   --destructive-foreground: oklch(0.98 0.01 90);
-  --success: oklch(0.68 0.16 158);
-  --success-foreground: oklch(0.19 0.04 158);
-  --warning: oklch(0.82 0.16 78);
-  --warning-foreground: oklch(0.26 0.06 60);
+  --success: oklch(0.74 0.16 155);
+  --success-foreground: oklch(0.18 0.04 155);
+  --warning: oklch(0.84 0.16 80);
+  --warning-foreground: oklch(0.22 0.05 60);
 
-  --usdt: oklch(0.62 0.13 165); /* tether green */
-  --barn: oklch(0.55 0.19 28); /* barn red */
+  --usdt: oklch(0.72 0.14 165);
+  --barn: oklch(0.6 0.19 32);
   --wood: oklch(0.42 0.07 55);
   --wood-foreground: oklch(0.96 0.02 90);
 
-  --border: oklch(0.42 0.05 150);
-  --input: oklch(0.36 0.05 150);
-  --ring: oklch(0.8 0.17 88);
+  --border: oklch(0.36 0.05 72 / 0.7);
+  --input: oklch(0.25 0.025 68);
+  --ring: oklch(0.82 0.16 82);
 
-  --sidebar: oklch(0.27 0.045 150);
-  --sidebar-foreground: oklch(0.96 0.02 110);
-  --sidebar-primary: oklch(0.8 0.17 88);
-  --sidebar-primary-foreground: oklch(0.26 0.06 60);
-  --sidebar-accent: oklch(0.34 0.04 152);
-  --sidebar-accent-foreground: oklch(0.96 0.02 110);
-  --sidebar-border: oklch(0.42 0.05 150);
-  --sidebar-ring: oklch(0.8 0.17 88);
+  --sidebar: oklch(0.2 0.022 66);
+  --sidebar-foreground: oklch(0.96 0.02 85);
+  --sidebar-primary: oklch(0.82 0.16 82);
+  --sidebar-primary-foreground: oklch(0.22 0.05 60);
+  --sidebar-accent: oklch(0.27 0.025 68);
+  --sidebar-accent-foreground: oklch(0.96 0.02 85);
+  --sidebar-border: oklch(0.36 0.05 72);
+  --sidebar-ring: oklch(0.82 0.16 82);
+
+  /* Scene colors used by the animated farm background */
+  --sky-top: oklch(0.15 0.02 260);
+  --sky-bottom: oklch(0.2 0.03 60);
+  --moon: oklch(0.95 0.06 90);
+  --hill-far: oklch(0.22 0.04 120);
+  --hill-near: oklch(0.18 0.035 110);
+  --wheat: oklch(0.72 0.13 82);
+  --firefly: oklch(0.9 0.17 95);
 
   /* Gradients & shadows */
-  --gradient-meadow: linear-gradient(
-    180deg,
-    oklch(0.36 0.07 200) 0%,
-    oklch(0.3 0.06 168) 35%,
-    oklch(0.24 0.045 148) 100%
-  );
-  --gradient-gold: linear-gradient(135deg, oklch(0.86 0.16 96), oklch(0.74 0.18 62));
-  --gradient-leaf: linear-gradient(135deg, oklch(0.72 0.17 148), oklch(0.55 0.15 158));
-  --gradient-usdt: linear-gradient(135deg, oklch(0.7 0.13 168), oklch(0.5 0.12 165));
+  --gradient-meadow: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 60%, var(--background) 100%);
+  --gradient-gold: linear-gradient(135deg, oklch(0.92 0.14 95), oklch(0.78 0.17 72));
+  --gradient-leaf: linear-gradient(135deg, oklch(0.78 0.16 135), oklch(0.6 0.15 150));
+  --gradient-usdt: linear-gradient(135deg, oklch(0.76 0.13 168), oklch(0.56 0.12 165));
   --gradient-card: linear-gradient(
     160deg,
-    oklch(0.34 0.05 150 / 0.95),
-    oklch(0.27 0.045 150 / 0.95)
+    oklch(0.27 0.035 72 / 0.92) 0%,
+    oklch(0.2 0.022 66 / 0.94) 55%,
+    oklch(0.18 0.02 62 / 0.96) 100%
   );
-  --shadow-soft: 0 10px 30px -12px oklch(0.15 0.04 150 / 0.7);
-  --shadow-glow: 0 0 0 1px oklch(0.8 0.17 88 / 0.35), 0 12px 34px -14px oklch(0.8 0.17 88 / 0.45);
-  --shadow-pop: 0 6px 0 0 oklch(0.32 0.07 60), 0 14px 26px -10px oklch(0.15 0.04 150 / 0.8);
+  --gradient-hero: radial-gradient(120% 90% at 85% 0%, oklch(0.82 0.16 82 / 0.28), transparent 60%),
+    linear-gradient(160deg, oklch(0.3 0.06 72 / 0.95), oklch(0.19 0.025 62 / 0.96));
+  --shadow-soft: 0 18px 40px -18px oklch(0.05 0.01 60 / 0.9), inset 0 1px 0 oklch(0.95 0.08 90 / 0.08);
+  --shadow-glow: 0 0 0 1px oklch(0.82 0.16 82 / 0.45), 0 14px 38px -12px oklch(0.82 0.16 82 / 0.55);
+  --shadow-pop: 0 5px 0 0 oklch(0.5 0.12 62), 0 16px 26px -12px oklch(0.82 0.16 82 / 0.45);
 }
 
 .dark {
@@ -154,16 +161,16 @@
 
 @utility farm-card {
   background: var(--gradient-card);
-  border: 1px solid var(--color-border);
+  border: 1px solid oklch(0.82 0.16 82 / 0.22);
   border-radius: var(--radius-2xl);
   box-shadow: var(--shadow-soft);
 }
 
 @utility farm-panel {
-  background: oklch(0.3 0.05 150 / 0.7);
-  border: 1px solid var(--color-border);
+  background: oklch(0.22 0.024 68 / 0.72);
+  border: 1px solid oklch(0.82 0.16 82 / 0.16);
   border-radius: var(--radius-xl);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
 }
 
 @utility gold-text {
@@ -259,4 +266,67 @@
 
 @utility safe-bottom {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+}
+
+@utility farm-hero {
+  background: var(--gradient-hero);
+  border: 1px solid oklch(0.82 0.16 82 / 0.35);
+  border-radius: var(--radius-3xl);
+  box-shadow: var(--shadow-soft), 0 0 60px -30px oklch(0.82 0.16 82 / 0.6);
+}
+
+/* ---------- Animated farm background ---------- */
+@keyframes bf-twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+@keyframes bf-firefly {
+  0% { transform: translate(0, 0); opacity: 0; }
+  15% { opacity: 1; }
+  50% { transform: translate(28px, -40px); opacity: 0.9; }
+  85% { opacity: 1; }
+  100% { transform: translate(-16px, -90px); opacity: 0; }
+}
+@keyframes bf-sway {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+@keyframes bf-drift {
+  from { transform: translateX(-30%); }
+  to { transform: translateX(130vw); }
+}
+@keyframes bf-glow {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.9; }
+}
+@keyframes bf-dig {
+  0%, 100% { transform: rotate(-25deg); }
+  50% { transform: rotate(35deg); }
+}
+@keyframes bf-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes bf-grow {
+  from { transform: scaleY(0.4); }
+  to { transform: scaleY(1); }
+}
+
+.bf-scene { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: var(--gradient-meadow); }
+.bf-moon { position: absolute; top: 7%; right: 12%; width: 64px; height: 64px; border-radius: 9999px; background: var(--moon); box-shadow: 0 0 60px 18px oklch(0.95 0.06 90 / 0.25); animation: bf-glow 6s ease-in-out infinite; }
+.bf-star { position: absolute; width: 2px; height: 2px; border-radius: 9999px; background: var(--moon); animation: bf-twinkle 3s ease-in-out infinite; }
+.bf-cloud { position: absolute; height: 18px; width: 120px; border-radius: 9999px; background: oklch(0.6 0.03 70 / 0.12); filter: blur(4px); animation: bf-drift 70s linear infinite; }
+.bf-hills { position: absolute; inset-inline: 0; bottom: 0; width: 100%; height: 34vh; }
+.bf-hill-far { fill: var(--hill-far); }
+.bf-hill-near { fill: var(--hill-near); }
+.bf-wheat-row { position: absolute; inset-inline: 0; bottom: 0; display: flex; justify-content: space-around; height: 64px; opacity: 0.55; }
+.bf-wheat { width: 3px; height: 100%; border-radius: 9999px; background: linear-gradient(to top, transparent, var(--wheat)); transform-origin: bottom center; animation: bf-sway 4s ease-in-out infinite; }
+.bf-firefly { position: absolute; width: 5px; height: 5px; border-radius: 9999px; background: var(--firefly); box-shadow: 0 0 10px 3px oklch(0.9 0.17 95 / 0.6); animation: bf-firefly 9s ease-in-out infinite; }
+
+@utility animate-dig { animation: bf-dig 0.7s ease-in-out infinite; transform-origin: 20% 80%; }
+@utility animate-bob { animation: bf-bob 1.4s ease-in-out infinite; }
+@utility animate-sway { animation: bf-sway 3s ease-in-out infinite; transform-origin: bottom center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-scene *, .animate-dig, .animate-bob, .animate-sway, .animate-float { animation: none !important; }
 }
