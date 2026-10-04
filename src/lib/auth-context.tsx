@@ -1,3 +1,4 @@
+import type React from "react";
 import {
   createContext,
   useCallback,
@@ -42,7 +43,12 @@ interface AuthValue {
   isAdmin: boolean;
 }
 
-const AuthContext = createContext<AuthValue | null>(null);
+// Kept on globalThis so a hot reload of this file reuses the same context
+// instead of creating a second one (which made AppGate lose its provider).
+const CTX_KEY = "__bearFarmAuthContext";
+const g = globalThis as unknown as Record<string, React.Context<AuthValue | null> | undefined>;
+const AuthContext: React.Context<AuthValue | null> =
+  g[CTX_KEY] ?? (g[CTX_KEY] = createContext<AuthValue | null>(null));
 
 export function useAuth(): AuthValue {
   const ctx = useContext(AuthContext);
