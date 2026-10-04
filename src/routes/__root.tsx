@@ -16,6 +16,7 @@ import { reportLovableError } from "@/lib/lovable-error-reporting";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { LoadingScreen, SuspendedScreen } from "@/components/LoadingScreen";
 import { BottomNav } from "@/components/BottomNav";
+import { FarmBackground } from "@/components/FarmBackground";
 
 function NotFoundComponent() {
   return (
@@ -123,6 +124,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <FarmBackground />
       <AuthProvider>
         <AppGate />
       </AuthProvider>

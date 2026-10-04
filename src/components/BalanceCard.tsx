@@ -13,18 +13,18 @@ export function UserHeader({ user }: { user: UserDoc }) {
           <img
             src={user.photoUrl}
             alt=""
-            className="size-11 rounded-full border-2 border-primary object-cover"
+            className="size-12 rounded-2xl border-2 border-primary object-cover shadow-[var(--shadow-glow)]"
           />
         ) : (
-          <div className="flex size-11 items-center justify-center rounded-full border-2 border-primary bg-secondary text-lg">
+          <div className="flex size-12 items-center justify-center rounded-2xl border-2 border-primary bg-secondary text-2xl shadow-[var(--shadow-glow)]">
             🐻
           </div>
         )}
         <span className="absolute -right-0.5 -bottom-0.5 size-3 rounded-full border-2 border-card bg-success" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-display text-base font-extrabold">{name || "Farmer"}</p>
-        <p className="text-[11px] text-muted-foreground">ID {user.telegramId}</p>
+        <p className="text-[11px] text-muted-foreground">Welcome back, farmer 🌾</p>
+        <p className="truncate font-display text-lg font-extrabold leading-tight">{name || "Farmer"}</p>
       </div>
       <span className="flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-1 text-[10px] font-bold text-success">
         <ShieldCheck className="size-3" /> Verified
@@ -36,18 +36,19 @@ export function UserHeader({ user }: { user: UserDoc }) {
 export function BalanceCard({ user, config }: { user: UserDoc; config: AppConfig }) {
   const usd = tokensToUsd(user.balance, config.tokensPerUsd);
   return (
-    <div className="relative mx-4 mt-4 overflow-hidden farm-card p-5">
-      <div className="pointer-events-none absolute -top-8 -right-8 size-32 rounded-full bg-primary/10 blur-2xl" />
+    <div className="relative mx-4 mt-4 overflow-hidden farm-hero p-5">
+      <div className="pointer-events-none absolute -top-10 -right-10 size-40 rounded-full bg-primary/20 blur-3xl" />
+      <div className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-12 bg-foreground/5 animate-shine" />
       <img
         src={logo}
         alt=""
-        className="pointer-events-none absolute -right-6 -bottom-8 size-32 opacity-20"
+        className="pointer-events-none absolute -right-3 top-3 size-24 animate-float drop-shadow-[0_10px_20px_var(--color-primary)]"
       />
       <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
         <Coins className="size-3.5 text-primary" /> {config.tokenName} balance
       </p>
       <div className="mt-1 flex items-end gap-2">
-        <span className="font-display text-4xl font-extrabold gold-text">
+        <span className="font-display text-5xl font-extrabold gold-text">
           {formatTokens(user.balance)}
         </span>
         <span className="pb-1 font-display text-sm font-bold text-primary">
