@@ -27,8 +27,8 @@ export function MiningCard({
 
   const endsAt = user.mining.endsAt ?? 0;
   const startedAt = user.mining.startedAt ?? 0;
-  const running = user.mining.active && endsAt > now;
-  const finished = user.mining.active && endsAt > 0 && endsAt <= now;
+  const finished = user.mining.claimable || (endsAt > 0 && endsAt <= now && !user.mining.active && user.mining.startedAt !== null);
+  const running = !finished && user.mining.active && endsAt > now;
   const cycleMs = Math.max(1, config.miningCycleMinutes) * 60_000;
   const progress = running
     ? Math.min(100, Math.max(0, ((now - startedAt) / (endsAt - startedAt || cycleMs)) * 100))

@@ -1,34 +1,78 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Globe, PlayCircle, ShieldCheck, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { PlayCircle, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
+import { api, errorMessage } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { formatTokens } from "@/lib/format";
-import { Card, EmptyState, GuideBox, SectionTitle } from "@/components/ui-kit";
+import { hapticNotify, openExternal } from "@/lib/telegram";
+import { Card, EmptyState, GuideBox, PopButton, SectionTitle } from "@/components/ui-kit";
+import type { AdNetworkDoc } from "@/lib/types";
 
 export const Route = createFileRoute("/ads")({
   ssr: false,
   head: () => ({
     meta: [
       { title: "Watch Ads — Bear Farm" },
-      {
-        name: "description",
-        content: "Watch rewarded ads and visit partner sites to farm extra Bear Farm tokens.",
-      },
+      { name: "description", content: "Watch rewarded ads from Adsgram, Monetag and GigaPub to farm extra Bear Farm tokens." },
       { property: "og:title", content: "Watch Ads — Bear Farm" },
-      {
-        property: "og:description",
-        content: "Rewarded ads and site visits with server-verified rewards.",
-      },
+      { property: "og:description", content: "Rewarded ads with server-verified rewards." },
     ],
   }),
   component: AdsPage,
 });
 
+const SDK: Record<string, string> = {
+  adsgram: "https://sad.adsgram.ai/js/sad.min.js",
+  monetag: "https://libtl.com/sdk.js",
+};
+
+function loadScript(src: string, attrs: Record<string, string> = {}) {
+  return new Promise<void>((resolve, reject) => {
+    const key = src + JSON.stringify(attrs);
+    if (document.querySelector(`script[data-bf="${CSS.escape(key)}"]`)) return resolve();
+    const s = document.createElement("script");
+    s.src = src;
+    s.async = true;
+    s.dataset["bf"] = key;
+    for (const [k, v] of Object.entries(attrs)) s.setAttribute(k, v);
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("Ad provider failed to load."));
+    document.head.appendChild(s);
+  });
+}
+
+async function showProviderAd(provider: string, blockId: string, url: string) {
+  const w = window as unknown as Record<string, unknown>;
+  if (provider === "adsgram" && blockId) {
+    await loadScript(SDK["adsgram"]!);
+    const Adsgram = w["Adsgram"] as { init: (o: { blockId: string }) => { show: () => Promise<unknown> } } | undefined;
+    if (!Adsgram) throw new Error("Adsgram is not available.");
+    await Adsgram.init({ blockId }).show();
+    return;
+  }
+  if (provider === "monetag" && blockId) {
+    const fn = `show_${blockId}`;
+    await loadScript(SDK["monetag"]!, { "data-zone": blockId, "data-sdk": fn });
+    const show = w[fn] as (() => Promise<unknown>) | undefined;
+    if (!show) throw new Error("Monetag is not available.");
+    await show();
+    return;
+  }
+  if (url) {
+    openExternal(url);
+    return;
+  }
+  throw new Error("This ad network is not configured yet.");
+}
+
 function AdsPage() {
   const { user, config } = useAuth();
-  const [tab, setTab] = useState<"ads" | "sites">("ads");
+  const list = useQuery({ queryKey: ["adNetworks"], queryFn: () => api.listAdNetworks(), staleTime: 15_000 });
   if (!user || !config) return null;
+  const networks = list.data?.networks ?? [];
 
   return (
     <div className="pb-6">
@@ -37,73 +81,125 @@ function AdsPage() {
           <PlayCircle className="size-6 text-primary" /> Watch & Earn
         </h1>
         <p className="text-xs text-muted-foreground">
-          Ads watched so far: {formatTokens(user.adsWatchedTotal)} 📺
+          Today: {list.data?.watchedToday ?? 0} ads 📺 · Total {formatTokens(user.adsWatchedTotal)}
         </p>
       </div>
 
-      <div className="mx-4 mt-4 grid grid-cols-2 gap-2 farm-panel p-1.5">
-        {(
-          [
-            { key: "ads", label: "Watch Ads", icon: PlayCircle },
-            { key: "sites", label: "Visit Sites", icon: Globe },
-          ] as const
-        ).map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className={`flex items-center justify-center gap-2 rounded-xl px-3 py-3 font-display text-sm font-extrabold transition-colors ${
-              tab === key ? "bg-primary text-primary-foreground" : "text-muted-foreground"
-            }`}
-          >
-            <Icon className="size-4" /> {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="mx-4 mt-4">
-        <Card className="text-center">
-          <div className="relative mx-auto flex size-20 items-center justify-center">
-            <span className="absolute inset-0 rounded-full bg-primary/20 animate-pulse-ring" />
-            <span className="relative text-4xl animate-float">{tab === "ads" ? "📺" : "🌐"}</span>
+      <section className="mt-4 px-4">
+        <SectionTitle icon={<ShieldCheck className="size-4 text-success" />} title="Ad networks" />
+        {list.isLoading ? (
+          <Card className="animate-pulse text-center text-sm text-muted-foreground">Loading…</Card>
+        ) : list.data && !list.data.adsEnabled ? (
+          <Card><EmptyState emoji="⏸️" text="Ads are paused right now." /></Card>
+        ) : networks.length === 0 ? (
+          <Card><EmptyState emoji="📺" text="No ads available right now. Check back soon!" /></Card>
+        ) : (
+          <div className="space-y-2">
+            {networks.map((n) => (
+              <AdCard key={n.id} net={n} symbol={config.tokenSymbol} />
+            ))}
           </div>
-          <h2 className="mt-3 font-display text-lg font-extrabold">
-            {tab === "ads" ? "Rewarded ads coming soon" : "Site visits coming soon"}
-          </h2>
-          <p className="mx-auto mt-2 max-w-xs text-sm text-muted-foreground">
-            This section activates as soon as the ad provider is connected. Rewards will only be
-            paid after the provider confirms a completed view server-to-server — there is no
-            button-only reward.
-          </p>
-          <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-success/10 px-3 py-2 text-xs font-semibold text-success">
-            <ShieldCheck className="size-4" /> Server-verified rewards only
-          </div>
-        </Card>
-      </div>
-
-      <section className="mt-5 px-4">
-        <SectionTitle
-          icon={<Sparkles className="size-4 text-accent" />}
-          title="Why this matters for referrals"
-        />
-        <Card>
-          <EmptyState
-            emoji="🎯"
-            text={`Your invited friends become verified after ${config.referralStage1Ads} ads on day 1 and ${config.referralStage2Ads} ads on day 2 — these are counted here.`}
-          />
-        </Card>
+        )}
       </section>
 
       <div className="mx-4 mt-4">
         <GuideBox
           title="Ads guide 📺"
           points={[
-            "Each ad view starts a server session; the reward is written only after the provider confirms the view.",
-            "Rate limits apply per hour and per day. Suspicious or repeated sessions are rejected.",
-            "Ads watched here also unlock your referrer's staged rewards.",
-            "Using VPN, emulators or multiple accounts per device leads to suspension.",
+            "Watch the full ad, then press Claim when the timer ends. The server checks the time.",
+            "Each network has its own daily limit and short cooldown.",
+            `Your invited friends become verified after ${config.referralStage1Ads} ads on day 1 and ${config.referralStage2Ads} ads on day 2.`,
+            "VPN, emulators or multiple accounts per device lead to suspension.",
           ]}
         />
       </div>
     </div>
+  );
+}
+
+function AdCard({ net, symbol }: { net: AdNetworkDoc; symbol: string }) {
+  const qc = useQueryClient();
+  const [session, setSession] = useState<string | null>(null);
+  const [wait, setWait] = useState(0);
+  const [cool, setCool] = useState(net.cooldownLeft);
+  const [busy, setBusy] = useState(false);
+  const [broken, setBroken] = useState(false);
+
+  useEffect(() => setCool(net.cooldownLeft), [net.cooldownLeft]);
+  useEffect(() => {
+    if (wait <= 0 && cool <= 0) return;
+    const id = setInterval(() => {
+      setWait((w) => Math.max(0, w - 1));
+      setCool((c) => Math.max(0, c - 1));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [wait, cool]);
+
+  const done = net.remainingToday <= 0;
+
+  async function watch() {
+    setBusy(true);
+    try {
+      const res = await api.startAdSession({ networkId: net.id });
+      setSession(res.sessionId);
+      setWait(res.waitSeconds);
+      await showProviderAd(res.provider, res.blockId, res.url);
+    } catch (error) {
+      hapticNotify("error");
+      toast.error(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function claim() {
+    if (!session) return;
+    setBusy(true);
+    try {
+      const res = await api.claimAdSession({ sessionId: session });
+      hapticNotify("success");
+      toast.success(`📺 +${formatTokens(res.awarded)} ${symbol}`);
+      setSession(null);
+      void qc.invalidateQueries({ queryKey: ["adNetworks"] });
+    } catch (error) {
+      hapticNotify("error");
+      toast.error(errorMessage(error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="flex items-center gap-3">
+      {net.logoUrl && !broken ? (
+        <img
+          src={net.logoUrl}
+          alt={net.name}
+          referrerPolicy="no-referrer"
+          onError={() => setBroken(true)}
+          className="size-12 shrink-0 rounded-xl bg-secondary object-contain p-1"
+        />
+      ) : (
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/20 font-display text-lg font-extrabold text-primary">
+          {net.name.slice(0, 1)}
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-display text-sm font-bold">{net.name}</p>
+        <p className="text-xs text-primary">+{formatTokens(net.reward)} {symbol} / ad</p>
+        <p className="text-[11px] text-muted-foreground">
+          {net.watchedToday}/{net.dailyLimit} today
+        </p>
+      </div>
+      {session ? (
+        <PopButton variant="accent" className="!px-3 !py-2" onClick={claim} loading={busy} disabled={wait > 0}>
+          {wait > 0 ? `${wait}s` : "Claim"}
+        </PopButton>
+      ) : (
+        <PopButton className="!px-3 !py-2" onClick={watch} loading={busy} disabled={done || cool > 0}>
+          {done ? "Done" : cool > 0 ? `${cool}s` : "Watch"}
+        </PopButton>
+      )}
+    </Card>
   );
 }

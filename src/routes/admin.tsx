@@ -7,6 +7,7 @@ import {
   ClipboardList,
   KeyRound,
   ListChecks,
+  PlayCircle,
   Lock,
   ScrollText,
   Settings2,
@@ -38,6 +39,7 @@ const TABS = [
   { key: "users", label: "Users", icon: Users },
   { key: "withdrawals", label: "Withdrawals", icon: Banknote },
   { key: "tasks", label: "Tasks", icon: ListChecks },
+  { key: "ads", label: "Ad networks", icon: PlayCircle },
   { key: "codes", label: "Codes", icon: KeyRound },
   { key: "config", label: "Config", icon: Settings2 },
   { key: "audit", label: "Audit log", icon: ScrollText },
@@ -99,6 +101,7 @@ function AdminPage() {
         {tab === "users" ? <UsersTab /> : null}
         {tab === "withdrawals" ? <WithdrawalsTab /> : null}
         {tab === "tasks" ? <TasksTab /> : null}
+        {tab === "ads" ? <AdsTab /> : null}
         {tab === "codes" ? <CodesTab /> : null}
         {tab === "config" ? <ConfigTab /> : null}
         {tab === "audit" ? <ResourceList resource="audit" emoji="📜" /> : null}
@@ -287,6 +290,18 @@ function UsersTab() {
                     {suspended ? "Unsuspend" : "Suspend"}
                   </PopButton>
                   <PopButton
+                    variant="accent"
+                    className="!px-3 !py-2 text-xs"
+                    onClick={() => {
+                      const amount = window.prompt("Add balance (tokens)");
+                      const n = Math.floor(Number(amount));
+                      if (!amount || !Number.isFinite(n) || n <= 0) return;
+                      action.mutate({ action: "adjustBalance", payload: { userId: id, amount: n } });
+                    }}
+                  >
+                    + Add balance
+                  </PopButton>
+                  <PopButton
                     variant="muted"
                     className="!px-3 !py-2 text-xs"
                     onClick={() => {
@@ -391,6 +406,7 @@ function TasksTab() {
     url: "",
     chatId: "",
     reward: "",
+    iconUrl: "",
   });
 
   return (
@@ -423,6 +439,7 @@ function TasksTab() {
             ["url", "URL"],
             ["chatId", "Channel chat ID / @username (channel tasks)"],
             ["reward", "Reward tokens"],
+            ["iconUrl", "Icon image link (https://i.ibb.co/…)"],
           ] as const
         ).map(([key, placeholder]) => (
           <input
@@ -463,6 +480,7 @@ function TasksTab() {
               const active = row["active"] !== false;
               return (
                 <Card key={id} className="flex items-center gap-2">
+                  <TaskIcon url={str(row, "iconUrl")} fallback="📋" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-display text-sm font-bold">{str(row, "title")}</p>
                     <p className="text-[11px] text-muted-foreground">
@@ -483,6 +501,17 @@ function TasksTab() {
                     }}
                   >
                     Edit
+                  </PopButton>
+                  <PopButton
+                    variant="muted"
+                    className="!px-2.5 !py-2 text-xs"
+                    onClick={() => {
+                      const iconUrl = window.prompt("Icon image link (https)", str(row, "iconUrl"));
+                      if (iconUrl === null) return;
+                      action.mutate({ action: "updateTask", payload: { taskId: id, iconUrl } });
+                    }}
+                  >
+                    Icon
                   </PopButton>
                   <PopButton
                     variant="muted"
@@ -664,5 +693,99 @@ function ResourceList({ resource, emoji }: { resource: string; emoji: string }) 
         </div>
       )}
     </div>
+  );
+}
+
+function TaskIcon({ url, fallback }: { url: string; fallback: string }) {
+  const [broken, setBroken] = useState(false);
+  if (!url || broken) return <span className="text-2xl">{fallback}</span>;
+  return (
+    <img
+      src={url}
+      alt=""
+      referrerPolicy="no-referrer"
+      onError={() => setBroken(true)}
+      className="size-9 shrink-0 rounded-lg object-cover"
+    />
+  );
+}
+
+const AD_FIELDS = [
+  ["name", "Name"],
+  ["blockId", "Block / zone ID"],
+  ["url", "Ad link (https)"],
+  ["logoUrl", "Logo image link (https)"],
+  ["reward", "Reward tokens"],
+  ["dailyLimit", "Daily limit"],
+  ["cooldownSecs", "Cooldown seconds"],
+  ["minWatchSecs", "Minimum watch seconds"],
+] as const;
+
+function AdsTab() {
+  const list = useAdminList("adnetworks");
+  return (
+    <div>
+      <SectionTitle icon={<PlayCircle className="size-4 text-primary" />} title="Ad networks" />
+      {list.isLoading ? (
+        <Card className="animate-pulse text-center text-sm text-muted-foreground">Loading…</Card>
+      ) : (list.data?.rows ?? []).length === 0 ? (
+        <Card>
+          <EmptyState emoji="📺" text="No ad networks. Run the second database file first." />
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {list.data!.rows.map((row) => (
+            <AdNetworkEditor key={str(row, "id")} row={row} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdNetworkEditor({ row }: { row: Record<string, unknown> }) {
+  const action = useAdminAction();
+  const [form, setForm] = useState<Record<string, string>>(() =>
+    Object.fromEntries(AD_FIELDS.map(([k]) => [k, str(row, k)])),
+  );
+  const active = row["active"] !== false;
+  return (
+    <Card className="space-y-2">
+      <div className="flex items-center gap-2">
+        <TaskIcon url={form["logoUrl"] ?? ""} fallback="📺" />
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-sm font-bold">{str(row, "name")}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {str(row, "id")} · {str(row, "provider")} · {active ? "active" : "paused"}
+          </p>
+        </div>
+        <PopButton
+          variant="muted"
+          className="!px-2.5 !py-2 text-xs"
+          onClick={() =>
+            action.mutate({ action: "upsertAdNetwork", payload: { id: str(row, "id"), active: !active } })
+          }
+        >
+          {active ? "Pause" : "Enable"}
+        </PopButton>
+      </div>
+      {AD_FIELDS.map(([key, label]) => (
+        <label key={key} className="block text-[11px] text-muted-foreground">
+          {label}
+          <input
+            value={form[key] ?? ""}
+            onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+            className="mt-0.5 w-full rounded-xl border border-input bg-input/50 px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+          />
+        </label>
+      ))}
+      <PopButton
+        className="w-full"
+        loading={action.isPending}
+        onClick={() => action.mutate({ action: "upsertAdNetwork", payload: { id: str(row, "id"), ...form } })}
+      >
+        Save
+      </PopButton>
+    </Card>
   );
 }

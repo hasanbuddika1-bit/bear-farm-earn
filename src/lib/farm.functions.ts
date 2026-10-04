@@ -192,7 +192,7 @@ export const listTasks = createServerFn({ method: "POST" })
     const [tasks, claims] = await Promise.all([
       client
         .from("tasks")
-        .select("id, group_name, kind, title, description, url, chat_id, reward, wait_secs, active")
+        .select("id, group_name, kind, title, description, url, chat_id, reward, wait_secs, active, icon_url")
         .eq("active", true)
         .order("sort_order", { ascending: true }),
       client.from("task_claims").select("task_key, day_key").eq("user_id", row.id),
@@ -220,6 +220,7 @@ export const listTasks = createServerFn({ method: "POST" })
         url: (t.url as string) ?? "",
         chatId: (t.chat_id as string) ?? null,
         reward: Number(t.reward),
+        iconUrl: (t.icon_url as string) ?? null,
         active: true,
         claimed: claimedKeys.has(`${t.id as string}:${dayKey}`),
       };

@@ -1,5 +1,5 @@
 export type TaskKind = "telegram_channel" | "mini_app" | "link";
-export type TaskGroup = "main" | "partner";
+export type TaskGroup = "daily" | "main" | "partner";
 
 export interface AppConfig {
   tokenName: string;
@@ -77,6 +77,7 @@ export interface TaskDoc {
   url: string;
   chatId?: string | null;
   reward: number;
+  iconUrl?: string | null;
   active: boolean;
   claimed?: boolean;
 }
@@ -112,4 +113,19 @@ export interface ReferralRow {
   earned: number;
   adsWatched: number;
   createdAt: number;
+}
+
+export interface AdNetworkDoc {
+  id: string;
+  name: string;
+  provider: "adsgram" | "monetag" | "gigapub" | "link";
+  blockId: string;
+  url: string;
+  logoUrl: string;
+  reward: number;
+  dailyLimit: number;
+  watchedToday: number;
+  remainingToday: number;
+  minWatchSecs: number;
+  cooldownLeft: number;
 }
