@@ -42,11 +42,6 @@ function WalletPage() {
     queryFn: () => api.listWithdrawals({}),
     staleTime: 30_000,
   });
-  const stats = useQuery({
-    queryKey: ["payout-stats"],
-    queryFn: () => api.publicPayouts({}),
-    staleTime: 5 * 60_000,
-  });
 
   const saveWallet = useMutation({
     mutationFn: () => api.setWallet({ address: address.trim() }),
