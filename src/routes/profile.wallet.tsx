@@ -8,7 +8,8 @@ import { api, errorMessage, newIdempotencyKey } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { formatDate, formatTokens, formatUsd, tokensToUsd } from "@/lib/format";
 import { hapticNotify } from "@/lib/telegram";
-import { Card, EmptyState, GuideBox, PopButton, SectionTitle, StatPill } from "@/components/ui-kit";
+import { Card, EmptyState, GuideBox, PopButton, SectionTitle } from "@/components/ui-kit";
+import { HistoryRow, PayoutProofs, UsdtLogo } from "@/components/payouts";
 
 export const Route = createFileRoute("/profile/wallet")({
   ssr: false,
@@ -40,11 +41,6 @@ function WalletPage() {
     queryKey: ["withdrawals"],
     queryFn: () => api.listWithdrawals({}),
     staleTime: 30_000,
-  });
-  const stats = useQuery({
-    queryKey: ["payout-stats"],
-    queryFn: () => api.publicPayouts({}),
-    staleTime: 5 * 60_000,
   });
 
   const saveWallet = useMutation({
@@ -183,16 +179,6 @@ function WalletPage() {
         </Card>
       </section>
 
-      <div className="mx-4 mt-4 grid grid-cols-2 gap-2">
-        <StatPill
-          label="Total paid out"
-          value={formatUsd(stats.data?.totalPaidUsd ?? 0)}
-          tone="usdt"
-        />
-        <StatPill label="Pending" value={formatUsd(stats.data?.pendingUsd ?? 0)} tone="gold" />
-      </div>
-
-
       <section className="mt-4 px-4">
         <SectionTitle icon={<History className="size-4 text-primary" />} title="Withdrawal history" />
         {withdrawals.isLoading ? (
@@ -203,25 +189,34 @@ function WalletPage() {
           </Card>
         ) : (
           <div className="space-y-2">
-            {withdrawals.data!.rows.map((row) => (
-              <Card key={row.id} className="flex items-center gap-3">
-                <span className="text-xl">
-                  {row.status === "approved" ? "✅" : row.status === "rejected" ? "❌" : "⏳"}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="font-display text-sm font-bold">
-                    #{row.number} · {formatTokens(row.amountTokens)} {config.tokenSymbol}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">{formatDate(row.createdAt)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-display text-sm font-extrabold text-usdt">
-                    {formatUsd(row.netUsd)}
-                  </p>
-                  <p className="text-[10px] uppercase text-muted-foreground">{row.status}</p>
-                </div>
-              </Card>
-            ))}
+            {withdrawals.data!.rows.map((row) => {
+              const tone =
+                row.status === "approved"
+                  ? "bg-success/20 text-success"
+                  : row.status === "rejected"
+                    ? "bg-destructive/20 text-destructive"
+                    : "bg-warning/20 text-warning";
+              return (
+                <HistoryRow
+                  key={row.id}
+                  icon={<UsdtLogo className="size-10" />}
+                  title={`#${row.number} · ${formatTokens(row.amountTokens)} ${config.tokenSymbol}`}
+                  subtitle={
+                    row.txId
+                      ? `Tx ${row.txId.slice(0, 8)}…${row.txId.slice(-6)}`
+                      : row.rejectReason
+                        ? row.rejectReason
+                        : formatDate(row.createdAt)
+                  }
+                  right={<span className="text-usdt">{formatUsd(row.netUsd)}</span>}
+                  rightSub={
+                    <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${tone}`}>
+                      {row.status}
+                    </span>
+                  }
+                />
+              );
+            })}
           </div>
         )}
       </section>
@@ -236,6 +231,10 @@ function WalletPage() {
             "Approved payouts are posted in the payment channel and sent to you by the bot with the transaction link.",
           ]}
         />
+      </div>
+
+      <div className="mx-4 mt-4">
+        <PayoutProofs />
       </div>
     </div>
   );
