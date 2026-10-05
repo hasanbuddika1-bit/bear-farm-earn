@@ -88,6 +88,10 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
     const math = withdrawalMath(data.tokens, config);
     if (math.netUsd <= 0) throw new Error("Amount is too small after fees.");
 
+    const { enforceIntegrity } = await import("./server/integrity.server");
+    const check = await enforceIntegrity(row.id, row.telegram_id);
+    if (!check.ok) throw new Error("Unusual account activity. Your account is under review.");
+
     await debit({
       userId: row.id,
       amount: data.tokens,

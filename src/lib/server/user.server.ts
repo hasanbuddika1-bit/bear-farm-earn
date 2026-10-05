@@ -95,5 +95,10 @@ export async function requireUser(
   if (row.suspended && !opts.allowSuspended) {
     throw new Error(row.suspended_reason ?? "This account is suspended.");
   }
+  // "Online" marker for the admin panel, written at most once every 2 minutes.
+  const seen = Date.parse((data as { updated_at?: string }).updated_at ?? "");
+  if (!Number.isFinite(seen) || Date.now() - seen > 120_000) {
+    void db().from("users").update({ updated_at: new Date().toISOString() }).eq("id", row.id);
+  }
   return { claims, row };
 }
