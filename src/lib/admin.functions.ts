@@ -328,7 +328,7 @@ export const adminAction = createServerFn({ method: "POST" })
     const { loadConfig, invalidateConfigCache, CONFIG_BOUNDS, withdrawalMath } = await import(
       "./server/config.server"
     );
-    const { sendMessage } = await import("./server/telegram.server");
+    const { sendMessage, payoutButtons, connectWebhook } = await import("./server/telegram.server");
     const client = db();
     const p = data.payload;
     const str = (key: string, max = 200) => String(p[key] ?? "").trim().slice(0, max);
@@ -376,16 +376,38 @@ export const adminAction = createServerFn({ method: "POST" })
           .eq("id", "global");
 
         const config = await loadConfig();
+        const owner = await client
+          .from("users")
+          .select("first_name, username")
+          .eq("id", wd.data.user_id as string)
+          .maybeSingle();
+        const rawName = String(owner.data?.first_name || owner.data?.username || "Farmer");
+        const shown = rawName.replace(/[<>&]/g, "").slice(0, 3) + "***";
+        const usd = Number(wd.data.net_usd).toFixed(4);
+        const when = new Date().toISOString().replace("T", " ").slice(0, 16) + " UTC";
+        const shortTx = txId.length > 18 ? `${txId.slice(0, 10)}…${txId.slice(-6)}` : txId;
         if (user.data?.telegram_id) {
           void sendMessage(
             user.data.telegram_id as string,
-            `✅ <b>Withdrawal paid!</b>\n💸 $${wd.data.net_usd} USDT (BEP-20)\n🔗 TX: <code>${txId}</code>`,
+            `✅ <b>WITHDRAWAL PAID!</b> 🎉\n\n` +
+              `💵 Amount: <b>$${usd} USDT</b>\n` +
+              `🌐 Network: BEP-20 (BSC)\n` +
+              `🔗 TX: <code>${txId.replace(/[<>&]/g, "")}</code>\n` +
+              `🕒 ${when}\n\n` +
+              `Thank you for farming with us! 🐻🌾`,
+            payoutButtons(txId),
           );
         }
         void sendMessage(
           config.paymentChannelUrl.replace("https://t.me/", "@"),
-          `💸 <b>Payout sent</b>\n🐻 Bear Farm\n💰 $${wd.data.net_usd} USDT\n🔗 <code>${txId}</code>`,
-          false,
+          `💸 <b>NEW PAYOUT SENT</b> ✅\n\n` +
+            `👤 Farmer: <b>${shown}</b>\n` +
+            `💵 Amount: <b>$${usd} USDT</b>\n` +
+            `🌐 Network: BEP-20 (BSC)\n` +
+            `🔗 TX: <code>${shortTx.replace(/[<>&]/g, "")}</code>\n` +
+            `🕒 ${when}\n\n` +
+            `🐻 Bear Farm — real farming, real payouts 🌾`,
+          payoutButtons(txId),
         );
         await audit(admin.telegram_id, "approveWithdrawal", id, { txId });
         return { ok: true, message: "Withdrawal approved." };
@@ -423,6 +445,26 @@ export const adminAction = createServerFn({ method: "POST" })
         }
         await audit(admin.telegram_id, "rejectWithdrawal", id, { reason });
         return { ok: true, message: "Withdrawal rejected and refunded." };
+      }
+
+      case "connectBot": {
+        const secret = process.env["BEARFARM_TG_WEBHOOK_SECRET"];
+        if (!secret) throw new Error("Webhook secret is not configured on the server.");
+        const { getRequest } = await import("@tanstack/react-start/server");
+        const origin = new URL(getRequest().url).origin;
+        if (!origin.startsWith("https://")) throw new Error("Open the admin panel from the live site to connect the bot.");
+        const res = await connectWebhook(origin, secret);
+        await audit(admin.telegram_id, "connectBot", res.url, { ok: res.ok });
+        if (!res.ok) throw new Error(`Telegram refused: ${res.description || "unknown error"}`);
+        return { ok: true, message: `Bot connected to ${res.url}` };
+      }
+
+      case "checkUser": {
+        const { enforceIntegrity } = await import("./server/integrity.server");
+        const u = await client.from("users").select("telegram_id").eq("id", targetId).maybeSingle();
+        if (!u.data) throw new Error("User not found.");
+        const r = await enforceIntegrity(targetId, u.data.telegram_id as string);
+        return { ok: true, message: r.ok ? "✅ Balance and activity look correct." : `🚫 Suspended: ${r.reason}` };
       }
 
       case "suspendUser":

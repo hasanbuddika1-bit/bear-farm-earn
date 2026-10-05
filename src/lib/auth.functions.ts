@@ -10,7 +10,8 @@ export const telegramAuth = createServerFn({ method: "POST" })
     deviceId: String(input?.deviceId ?? "").slice(0, 128),
   }))
   .handler(async ({ data }) => {
-    const { verifyInitData, sendMessage, notifyAdmin } = await import("./server/telegram.server");
+    const { verifyInitData, sendPhoto, notifyAdmin } = await import("./server/telegram.server");
+    const { getRequest } = await import("@tanstack/react-start/server");
     const { db } = await import("./server/db.server");
     const { issueSession } = await import("./server/session.server");
     const { USER_COLUMNS } = await import("./server/user.server");
@@ -98,10 +99,28 @@ export const telegramAuth = createServerFn({ method: "POST" })
           .select("id");
       }
 
-      void sendMessage(
-        telegramId,
-        "🐻 <b>Welcome to Bear Farm!</b>\n🌾 Start mining, finish tasks and earn USDT.",
-      );
+      {
+        const name = (verified.user.firstName ?? "farmer").replace(/[<>&]/g, "").slice(0, 40);
+        const origin = (() => {
+          try {
+            return new URL(getRequest().url).origin;
+          } catch {
+            return "https://bear-farm-earn.vercel.app";
+          }
+        })();
+        void sendPhoto(
+          telegramId,
+          `${origin}/bear-farm-banner.png`,
+          `🎉 <b>Welcome to the farm, ${name}!</b> 🐻🌾\n\n` +
+            `Your Bear Farm account is ready.\n\n` +
+            `⛏️ Start mining on the home screen\n` +
+            `🎁 Claim your daily reward every day\n` +
+            `✅ Finish tasks for instant tokens\n` +
+            `👥 Invite friends and earn more\n` +
+            `💸 Withdraw real USDT (BEP-20)\n\n` +
+            `🍯 Happy farming!`,
+        );
+      }
       void notifyAdmin(
         `🆕 New farmer joined\n👤 ${verified.user.firstName ?? "Farmer"} (${telegramId})${duplicate ? "\n⚠️ Auto-suspended: duplicate device" : ""}`,
       );
