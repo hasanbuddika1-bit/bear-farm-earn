@@ -11,7 +11,7 @@ export const Route = createFileRoute("/api/public/telegram-webhook")({
           return new Response("unauthorised", { status: 401 });
         }
 
-        const { sendMessage } = await import("@/lib/server/telegram.server");
+        const { sendMessage, sendPhoto } = await import("@/lib/server/telegram.server");
         const { loadConfig } = await import("@/lib/server/config.server");
 
         let update: {
@@ -29,32 +29,23 @@ export const Route = createFileRoute("/api/public/telegram-webhook")({
 
         if (text.startsWith("/start")) {
           const config = await loadConfig();
-          await sendMessage(
+          const name = (update.message?.from?.first_name ?? "farmer")
+            .replace(/[<>&]/g, "")
+            .slice(0, 40);
+          const origin = new URL(request.url).origin;
+          await sendPhoto(
             chatId,
-            `🐻🌾 <b>WELCOME TO BEAR FARM</b> 🌾🐻\n` +
-              `━━━━━━━━━━━━━━━━━━━━\n\n` +
-              `👋 Hi <b>${update.message?.from?.first_name ?? "farmer"}</b>!\n` +
-              `Your own little farm that grows real money. 💚\n\n` +
-              `⛏️ <b>MINING</b>\n` +
-              `• +${config.miningRewardPerCycle} ${config.tokenSymbol} every ${config.miningCycleMinutes} minutes\n` +
-              `• One tap to start, claim when the timer ends\n\n` +
-              `🎁 <b>DAILY REWARD</b>\n` +
-              `• Day 1 → 7: ${config.dailyRewards.join(" · ")} ${config.tokenSymbol}\n` +
-              `• Resets every day at 00:00 UTC\n\n` +
-              `✅ <b>TASKS</b>\n` +
-              `• Daily, main and partner tasks\n` +
-              `• Join our channels for instant rewards\n\n` +
-              `📺 <b>WATCH ADS</b>\n` +
-              `• Quick ads, quick tokens\n\n` +
-              `👥 <b>INVITE FRIENDS</b>\n` +
-              `• Earn on every friend who farms with you\n\n` +
-              `💸 <b>WITHDRAW REAL USDT</b>\n` +
-              `• ${config.tokensPerUsd.toLocaleString("en-US")} ${config.tokenSymbol} = $1 USDT (BEP-20)\n` +
-              `• Every payout is posted in our payment channel\n\n` +
-              `📣 Community: ${config.communityChannelUrl}\n` +
-              `💸 Payouts: ${config.paymentChannelUrl}\n\n` +
-              `━━━━━━━━━━━━━━━━━━━━\n` +
-              `👇 Tap below and start farming now!`,
+            `${origin}/bear-farm-banner.png`,
+            `🐻🌾 <b>WELCOME TO BEAR FARM</b> 🌾🐻\n\n` +
+              `👋 Hey <b>${name}</b>, your farm is ready!\n` +
+              `Grow tokens every day and turn them into real <b>USDT</b> 💚\n\n` +
+              `⛏️ <b>Mine</b> — +${config.miningRewardPerCycle} ${config.tokenSymbol} every ${config.miningCycleMinutes} min\n` +
+              `🎁 <b>Daily reward</b> — up to ${Math.max(...config.dailyRewards)} ${config.tokenSymbol} a day\n` +
+              `✅ <b>Tasks</b> — join channels, earn instantly\n` +
+              `👥 <b>Invite friends</b> — earn on every friend\n` +
+              `💸 <b>Withdraw</b> — ${config.tokensPerUsd.toLocaleString("en-US")} ${config.tokenSymbol} = $1 USDT (BEP-20)\n\n` +
+              `🔒 Every payout is posted publicly in our payment channel.\n\n` +
+              `👇 <b>Tap below and start farming!</b>`,
           );
         } else if (text.startsWith("/help")) {
           const config = await loadConfig();
