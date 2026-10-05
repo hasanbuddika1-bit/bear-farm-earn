@@ -1,0 +1,11 @@
+# Roadmap
+- [ ] Withdraw approve: user + payout channel messages with "View transaction" + "Open Bear Farm" buttons
+- [ ] Welcome / start message with banner photo, nicer text
+- [ ] /start not arriving: admin "Connect bot" button sets webhook
+- [ ] Task icons shown; imgbb page links converted to direct images
+- [ ] Tasks: Start → Verify (bot, "join first") → Claim → Done; done sinks down
+- [ ] Remove Daily task tab
+- [ ] Watch tab back (no ad cards)
+- [ ] Admin: online count, total balances, suspended tab, user activity view
+- [ ] Withdraw requests: balance check shown + copy address
+- [ ] Auto-suspend on wrong activity
