@@ -7,6 +7,7 @@ import { api, errorMessage, newIdempotencyKey } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { formatDate, formatTokens } from "@/lib/format";
 import { hapticNotify, shareReferral } from "@/lib/telegram";
+import { HistoryRow } from "@/components/payouts";
 import { Card, EmptyState, GuideBox, PopButton, SectionTitle, StatPill } from "@/components/ui-kit";
 
 export const Route = createFileRoute("/refer")({
