@@ -157,25 +157,22 @@ function ReferPage() {
             {referrals.data!.rows.map((row) => {
               const stage = STAGE_LABEL[row.stage] ?? STAGE_LABEL["pending"]!;
               return (
-                <Card key={row.id} className="flex items-center gap-3">
-                  <span className="text-xl">🐾</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-display text-sm font-bold">{row.name}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {formatDate(row.createdAt)} · {row.adsWatched} ads
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${stage.className}`}
-                    >
+                <HistoryRow
+                  key={row.id}
+                  icon={
+                    <div className="flex size-10 items-center justify-center rounded-full bg-[image:var(--gradient-gold)] font-display text-base font-extrabold text-primary-foreground">
+                      {(row.name || "F").slice(0, 1).toUpperCase()}
+                    </div>
+                  }
+                  title={row.name}
+                  subtitle={`${formatDate(row.createdAt)} · ${row.adsWatched} ads 📺`}
+                  right={<span className="gold-text">+{formatTokens(row.earned)}</span>}
+                  rightSub={
+                    <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${stage.className}`}>
                       {stage.text}
                     </span>
-                    <p className="mt-1 text-xs font-bold text-primary">
-                      +{formatTokens(row.earned)}
-                    </p>
-                  </div>
-                </Card>
+                  }
+                />
               );
             })}
           </div>
