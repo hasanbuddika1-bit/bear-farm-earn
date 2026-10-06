@@ -812,9 +812,11 @@ function AdsTab() {
       <SectionTitle icon={<PlayCircle className="size-4 text-primary" />} title="Ad networks" />
       {list.isLoading ? (
         <Card className="animate-pulse text-center text-sm text-muted-foreground">Loading…</Card>
-      ) : (list.data?.rows ?? []).length === 0 ? (
+      ) : null}
+      <NewAdNetwork />
+      {list.isLoading ? null : (list.data?.rows ?? []).length === 0 ? (
         <Card>
-          <EmptyState emoji="📺" text="No ad networks. Run the second database file first." />
+          <EmptyState emoji="📺" text="No ads yet. Add one above." />
         </Card>
       ) : (
         <div className="space-y-3">
@@ -824,6 +826,53 @@ function AdsTab() {
         </div>
       )}
     </div>
+  );
+}
+
+function NewAdNetwork() {
+  const action = useAdminAction();
+  const [form, setForm] = useState<Record<string, string>>({ provider: "link" });
+  const inputCls =
+    "mt-0.5 w-full rounded-xl border border-input bg-input/50 px-3 py-2 text-sm text-foreground outline-none focus:border-primary";
+  return (
+    <Card className="mb-3 space-y-2">
+      <p className="font-display text-sm font-bold">➕ Add ad / visit site</p>
+      <label className="block text-[11px] text-muted-foreground">
+        Type
+        <select
+          value={form["provider"]}
+          onChange={(e) => setForm({ ...form, provider: e.target.value })}
+          className={inputCls}
+        >
+          <option value="link">Visit site (link)</option>
+          <option value="adsgram">Adsgram</option>
+          <option value="monetag">Monetag</option>
+          <option value="gigapub">GigaPub</option>
+        </select>
+      </label>
+      <label className="block text-[11px] text-muted-foreground">
+        ID (a-z, 0-9, _)
+        <input value={form["id"] ?? ""} onChange={(e) => setForm({ ...form, id: e.target.value.toLowerCase() })} className={inputCls} />
+      </label>
+      {AD_FIELDS.map(([key, label]) => (
+        <label key={key} className="block text-[11px] text-muted-foreground">
+          {label}
+          <input value={form[key] ?? ""} onChange={(e) => setForm({ ...form, [key]: e.target.value })} className={inputCls} />
+        </label>
+      ))}
+      <PopButton
+        className="w-full"
+        loading={action.isPending}
+        onClick={() =>
+          action.mutate(
+            { action: "upsertAdNetwork", payload: { ...form, create: true } },
+            { onSuccess: () => setForm({ provider: "link" }) },
+          )
+        }
+      >
+        Add
+      </PopButton>
+    </Card>
   );
 }
 
@@ -869,6 +918,15 @@ function AdNetworkEditor({ row }: { row: Record<string, unknown> }) {
         onClick={() => action.mutate({ action: "upsertAdNetwork", payload: { id: str(row, "id"), ...form } })}
       >
         Save
+      </PopButton>
+      <PopButton
+        variant="danger"
+        className="w-full"
+        onClick={() => {
+          if (confirm("Remove this ad?")) action.mutate({ action: "deleteAdNetwork", payload: { id: str(row, "id") } });
+        }}
+      >
+        Remove
       </PopButton>
     </Card>
   );

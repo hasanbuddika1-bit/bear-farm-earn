@@ -610,10 +610,41 @@ export const adminAction = createServerFn({ method: "POST" })
         if (p["minWatchSecs"] !== undefined) patch["min_watch_secs"] = num("minWatchSecs", 5, 120);
         if (p["active"] !== undefined) patch["active"] = p["active"] === true || p["active"] === "true";
         if (Object.keys(patch).length === 0) throw new Error("Nothing to update.");
+        if (p["create"] === true) {
+          const provider = str("provider", 20);
+          if (!["adsgram", "monetag", "gigapub", "link"].includes(provider)) throw new Error("Pick a valid type.");
+          if (!/^[a-z0-9_]{2,40}$/.test(id)) throw new Error("ID: use a-z, 0-9 and _ only.");
+          const ins = await client.from("ad_networks").insert({
+            id,
+            provider,
+            name: patch["name"] || id,
+            reward: patch["reward"] ?? 50,
+            daily_limit: patch["daily_limit"] ?? 10,
+            cooldown_secs: patch["cooldown_secs"] ?? 30,
+            min_watch_secs: patch["min_watch_secs"] ?? 15,
+            block_id: patch["block_id"] ?? null,
+            url: patch["url"] ?? null,
+            logo_url: patch["logo_url"] ?? null,
+            active: true,
+            sort_order: 100,
+          });
+          if (ins.error) throw new Error("Could not add (ID may already exist).");
+          await audit(admin.telegram_id, "createAdNetwork", id, patch);
+          return { ok: true, message: "Ad added." };
+        }
         const res = await client.from("ad_networks").update(patch).eq("id", id);
         if (res.error) throw new Error("Could not save the ad network.");
         await audit(admin.telegram_id, "upsertAdNetwork", id, patch);
         return { ok: true, message: "Ad network saved." };
+      }
+
+      case "deleteAdNetwork": {
+        const id = targetId;
+        if (!id) throw new Error("Network ID is required.");
+        const res = await client.from("ad_networks").delete().eq("id", id);
+        if (res.error) throw new Error("Could not remove the ad.");
+        await audit(admin.telegram_id, "deleteAdNetwork", id, {});
+        return { ok: true, message: "Ad removed." };
       }
 
       case "deleteTask": {
