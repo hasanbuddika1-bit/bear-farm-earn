@@ -208,9 +208,24 @@ function Overview() {
   const list = useAdminList("overview");
   const stats = list.data?.stats ?? {};
   const entries = Object.entries(stats);
+  const action = useAdminAction();
 
   return (
     <div>
+      <Card className="mb-3">
+        <p className="font-display text-sm font-bold">🤖 Telegram bot</p>
+        <p className="mb-2 text-[11px] text-muted-foreground">
+          Tap once from the live site so /start and welcome messages work.
+        </p>
+        <PopButton
+          variant="accent"
+          className="w-full !py-2 text-xs"
+          loading={action.isPending}
+          onClick={() => action.mutate({ action: "connectBot", payload: {} })}
+        >
+          Connect bot
+        </PopButton>
+      </Card>
       <SectionTitle title="Farm statistics" />
       {list.isLoading ? (
         <Card className="animate-pulse text-center text-sm text-muted-foreground">Loading…</Card>
