@@ -522,7 +522,7 @@ export const adminAction = createServerFn({ method: "POST" })
         }
         if (p["active"] !== undefined) patch["active"] = Boolean(p["active"]);
         if (p["sortOrder"] !== undefined) patch["sort_order"] = Math.floor(Number(p["sortOrder"]));
-        if (p["iconUrl"] !== undefined) patch["icon_url"] = safeHttpsUrl(str("iconUrl", 300));
+        if (p["iconUrl"] !== undefined) patch["icon_url"] = await directImageUrl(str("iconUrl", 300));
 
         if (id) {
           if (Object.keys(patch).length === 0) throw new Error("Nothing to update.");
@@ -559,7 +559,7 @@ export const adminAction = createServerFn({ method: "POST" })
         if (p["name"] !== undefined) patch["name"] = str("name", 60);
         if (p["blockId"] !== undefined) patch["block_id"] = str("blockId", 80) || null;
         if (p["url"] !== undefined) patch["url"] = safeHttpsUrl(str("url", 300));
-        if (p["logoUrl"] !== undefined) patch["logo_url"] = safeHttpsUrl(str("logoUrl", 300));
+        if (p["logoUrl"] !== undefined) patch["logo_url"] = await directImageUrl(str("logoUrl", 300));
         if (p["reward"] !== undefined) patch["reward"] = num("reward", 1, 1000);
         if (p["dailyLimit"] !== undefined) patch["daily_limit"] = num("dailyLimit", 0, 500);
         if (p["cooldownSecs"] !== undefined) patch["cooldown_secs"] = num("cooldownSecs", 0, 86400);
@@ -659,5 +659,22 @@ function safeHttpsUrl(value: string): string | null {
     return u.protocol === "https:" ? u.toString() : null;
   } catch {
     return null;
+  }
+}
+
+/** imgbb page links (ibb.co/xyz) are turned into the direct i.ibb.co image link. */
+async function directImageUrl(value: string): Promise<string | null> {
+  const safe = safeHttpsUrl(value.trim());
+  if (!safe) return null;
+  const u = new URL(safe);
+  if (u.hostname !== "ibb.co" && u.hostname !== "www.ibb.co") return safe;
+  try {
+    const res = await fetch(safe, { headers: { "user-agent": "Mozilla/5.0" } });
+    const html = await res.text();
+    const m = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
+    const direct = m?.[1] ? safeHttpsUrl(m[1]) : null;
+    return direct && new URL(direct).hostname.endsWith("ibb.co") ? direct : safe;
+  } catch {
+    return safe;
   }
 }
