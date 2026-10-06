@@ -7,6 +7,7 @@ import {
   listTasks as listTasksFn,
   startMining as startMiningFn,
   startTaskSession as startTaskSessionFn,
+  verifyTask as verifyTaskFn,
 } from "./farm.functions";
 import {
   claimReferralEarnings as claimReferralEarningsFn,
@@ -100,6 +101,10 @@ export const api = {
       sessionId: input.taskId,
       waitSeconds: Math.max(0, Math.ceil((result.readyAt - Date.now()) / 1000)),
     };
+  },
+
+  async verifyTask(input: { taskId: string }) {
+    return verifyTaskFn({ data: { token: getSessionToken(), taskId: input.taskId } });
   },
 
   async claimTask(input: { taskId: string; sessionId?: string }) {

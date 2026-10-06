@@ -360,3 +360,32 @@ export const claimTask = createServerFn({ method: "POST" })
     });
     return { awarded: result.awarded, balance: result.balance };
   });
+
+/** Checks with the bot that the user joined a channel task — no reward is given here. */
+export const verifyTask = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string; taskId: string }) => ({
+    token: String(input?.token ?? ""),
+    taskId: String(input?.taskId ?? "").slice(0, 64),
+  }))
+  .handler(async ({ data }): Promise<{ verified: boolean; message: string }> => {
+    const { requireUser } = await import("./server/user.server");
+    const { rateLimit } = await import("./server/session.server");
+    const { isChatMember } = await import("./server/telegram.server");
+    const { db } = await import("./server/db.server");
+
+    const { row } = await requireUser(data.token);
+    await rateLimit(`taskverify:${row.id}`, 30, 60);
+    const task = await db()
+      .from("tasks")
+      .select("id, kind, chat_id, active")
+      .eq("id", data.taskId)
+      .maybeSingle();
+    if (!task.data || !task.data.active) throw new Error("This task is no longer available.");
+    if (task.data.kind !== "channel" || !task.data.chat_id) {
+      return { verified: true, message: "Verified." };
+    }
+    const joined = await isChatMember(task.data.chat_id as string, Number(row.telegram_id));
+    return joined
+      ? { verified: true, message: "✅ Verified! Now tap Claim." }
+      : { verified: false, message: "You have not joined yet. Join the channel first, then tap Verify." };
+  });
