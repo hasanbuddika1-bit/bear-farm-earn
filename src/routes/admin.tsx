@@ -241,6 +241,7 @@ function UsersTab() {
   const [applied, setApplied] = useState("");
   const list = useAdminList("users", applied);
   const action = useAdminAction();
+  const [openId, setOpenId] = useState<string | null>(null);
 
   return (
     <div>
@@ -254,6 +255,25 @@ function UsersTab() {
         />
         <PopButton variant="muted" onClick={() => setApplied(search.trim())}>
           Search
+        </PopButton>
+      </div>
+      <div className="mb-2 flex gap-2">
+        <PopButton
+          variant={applied === "" ? "accent" : "muted"}
+          className="flex-1 !py-2 text-xs"
+          onClick={() => {
+            setSearch("");
+            setApplied("");
+          }}
+        >
+          👥 All users
+        </PopButton>
+        <PopButton
+          variant={applied === "__suspended" ? "danger" : "muted"}
+          className="flex-1 !py-2 text-xs"
+          onClick={() => setApplied("__suspended")}
+        >
+          🚫 Suspended
         </PopButton>
       </div>
       {list.isLoading ? (
@@ -279,9 +299,27 @@ function UsersTab() {
                       ID {str(row, "telegramId")} · balance {str(row, "balance")} · refs{" "}
                       {str(row, "referralCount")}
                     </p>
+                    {suspended && str(row, "suspendedReason") ? (
+                      <p className="text-[11px] text-destructive">⚠️ {str(row, "suspendedReason")}</p>
+                    ) : null}
                   </div>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
+                  <PopButton
+                    variant="muted"
+                    className="!px-3 !py-2 text-xs"
+                    onClick={() => setOpenId(openId === id ? null : id)}
+                  >
+                    📋 Activity
+                  </PopButton>
+                  <PopButton
+                    variant="muted"
+                    className="!px-3 !py-2 text-xs"
+                    loading={action.isPending}
+                    onClick={() => action.mutate({ action: "checkUser", payload: { userId: id } })}
+                  >
+                    🔍 Check
+                  </PopButton>
                   <PopButton
                     variant={suspended ? "accent" : "muted"}
                     className="!px-3 !py-2 text-xs"
@@ -322,6 +360,7 @@ function UsersTab() {
                     Adjust balance
                   </PopButton>
                 </div>
+                {openId === id ? <UserActivity userId={id} /> : null}
               </Card>
             );
           })}
@@ -355,9 +394,33 @@ function WithdrawalsTab() {
                   #{str(row, "number")} · {str(row, "amountTokens")} tokens → $
                   {str(row, "netUsd")}
                 </p>
-                <p className="break-all text-[11px] text-muted-foreground">
-                  {str(row, "username") || str(row, "telegramId")} · {str(row, "address")}
+                <p className="text-[11px] text-muted-foreground">
+                  {str(row, "username") || str(row, "telegramId")}
                 </p>
+                <div className="mt-1 flex items-center gap-2 rounded-lg bg-secondary/50 px-2 py-1.5">
+                  <code className="min-w-0 flex-1 break-all text-[11px]">{str(row, "address")}</code>
+                  <button
+                    type="button"
+                    className="shrink-0 rounded-md bg-primary/20 px-2 py-1 text-[11px] font-bold text-primary"
+                    onClick={() => {
+                      void navigator.clipboard
+                        .writeText(str(row, "address"))
+                        .then(() => toast.success("📋 Address copied"))
+                        .catch(() => toast.error("Could not copy"));
+                    }}
+                  >
+                    Copy
+                  </button>
+                </div>
+                {status === "pending" ? (
+                  row["balanceOk"] === true ? (
+                    <p className="mt-1 text-[11px] font-bold text-success">✅ Balance matches the records</p>
+                  ) : row["balanceOk"] === false ? (
+                    <p className="mt-1 text-[11px] font-bold text-destructive">
+                      🚨 Balance problem: {str(row, "balanceIssue")}
+                    </p>
+                  ) : null
+                ) : null}
                 <p className="mt-1 text-[11px] uppercase text-muted-foreground">{status}</p>
                 {status === "pending" ? (
                   <div className="mt-2 flex gap-2">
@@ -793,5 +856,42 @@ function AdNetworkEditor({ row }: { row: Record<string, unknown> }) {
         Save
       </PopButton>
     </Card>
+  );
+}
+
+function UserActivity({ userId }: { userId: string }) {
+  const list = useAdminList("activity", userId);
+  const stats = list.data?.stats;
+  if (list.isLoading) return <p className="mt-2 text-xs text-muted-foreground">Loading activity…</p>;
+  return (
+    <div className="mt-2 rounded-xl border border-border bg-background/40 p-2">
+      {stats ? (
+        <p className={`mb-1 text-[11px] font-bold ${stats["ok"] ? "text-success" : "text-destructive"}`}>
+          {stats["ok"] ? "✅" : "🚨"} Balance {stats["balance"]} · records {stats["ledger"]} · last hour +
+          {stats["lastHourEarned"]}
+        </p>
+      ) : null}
+      {(list.data?.rows ?? []).length === 0 ? (
+        <p className="text-[11px] text-muted-foreground">No activity yet.</p>
+      ) : (
+        <div className="max-h-64 space-y-1 overflow-y-auto">
+          {list.data!.rows.map((r) => {
+            const amount = Number(r["amount"] ?? 0);
+            return (
+              <div key={str(r, "id")} className="flex items-center gap-2 text-[11px]">
+                <span className="min-w-0 flex-1 truncate">{str(r, "label") || str(r, "kind")}</span>
+                <span className="text-muted-foreground">
+                  {new Date(str(r, "createdAt")).toISOString().slice(5, 16).replace("T", " ")}
+                </span>
+                <span className={`w-16 text-right font-bold ${amount >= 0 ? "text-success" : "text-destructive"}`}>
+                  {amount >= 0 ? "+" : ""}
+                  {amount}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
