@@ -108,17 +108,23 @@ export const adminList = createServerFn({ method: "POST" })
       const client = db();
 
       if (data.resource === "overview") {
-        const [users, pending, susp, paid] = await Promise.all([
+        const since = new Date(Date.now() - 15 * 60_000).toISOString();
+        const [users, pending, susp, paid, online, balances] = await Promise.all([
           client.from("users").select("id", { count: "exact", head: true }),
           client.from("withdrawals").select("id", { count: "exact", head: true }).eq("status", "pending"),
           client.from("users").select("id", { count: "exact", head: true }).eq("suspended", true),
           client.from("stats").select("paid_usd, tokens_minted").eq("id", "global").maybeSingle(),
+          client.from("users").select("id", { count: "exact", head: true }).gte("updated_at", since),
+          client.from("users").select("balance").limit(100000),
         ]);
+        const totalBalance = (balances.data ?? []).reduce((sum, r) => sum + Number(r.balance ?? 0), 0);
         return {
           rows: [],
           nextCursor: null,
           stats: {
             users: users.count ?? 0,
+            onlineNow: online.count ?? 0,
+            totalUserBalance: totalBalance,
             pendingWithdrawals: pending.count ?? 0,
             suspended: susp.count ?? 0,
             paidUsd: Number(paid.data?.paid_usd ?? 0),
@@ -143,11 +149,13 @@ export const adminList = createServerFn({ method: "POST" })
         let q = client
           .from("users")
           .select(
-            "id, telegram_id, username, first_name, balance, lifetime_earned, suspended, wallet_address, created_at",
+            "id, telegram_id, username, first_name, balance, lifetime_earned, suspended, suspended_reason, wallet_address, created_at",
           )
           .order("created_at", { ascending: false })
           .limit(50);
-        if (data.query) {
+        if (data.query === "__suspended") {
+          q = q.eq("suspended", true);
+        } else if (data.query) {
           q = q.or(
             `telegram_id.ilike.%${data.query}%,username.ilike.%${data.query}%,first_name.ilike.%${data.query}%`,
           );
@@ -173,6 +181,7 @@ export const adminList = createServerFn({ method: "POST" })
             referralCount: counts.get(r.id as string) ?? 0,
             wallet: (r.wallet_address as string) ?? "",
             suspended: Boolean(r.suspended),
+            suspendedReason: (r.suspended_reason as string) ?? "",
             createdAt: (r.created_at as string) ?? "",
           })),
           nextCursor: null,
@@ -199,8 +208,19 @@ export const adminList = createServerFn({ method: "POST" })
             });
           }
         }
+        const { inspectUser } = await import("./server/integrity.server");
+        const pendingOwners = [...new Set(list.filter((w) => w.status === "pending").map((w) => w.user_id as string))];
+        const checks = new Map<string, { ok: boolean; reason: string }>();
+        await Promise.all(
+          pendingOwners.map(async (uid) => {
+            const r = await inspectUser(uid);
+            checks.set(uid, { ok: r.ok, reason: r.reason ?? "" });
+          }),
+        );
         return {
           rows: list.map((w, index) => ({
+            balanceOk: checks.get(w.user_id as string)?.ok ?? null,
+            balanceIssue: checks.get(w.user_id as string)?.reason ?? "",
             id: w.id as string,
             number: list.length - index,
             amountTokens: Number(w.tokens),
@@ -214,6 +234,30 @@ export const adminList = createServerFn({ method: "POST" })
             createdAt: (w.created_at as string) ?? "",
           })),
           nextCursor: null,
+        };
+      }
+
+      if (data.resource === "activity" && data.query) {
+        const { inspectUser } = await import("./server/integrity.server");
+        const [rows, check] = await Promise.all([
+          client
+            .from("ledger")
+            .select("id, amount, kind, label, created_at")
+            .eq("user_id", data.query)
+            .order("created_at", { ascending: false })
+            .limit(100),
+          inspectUser(data.query),
+        ]);
+        return {
+          rows: (rows.data ?? []).map((r) => ({
+            id: String(r.id),
+            amount: Number(r.amount),
+            kind: (r.kind as string) ?? "",
+            label: (r.label as string) ?? "",
+            createdAt: (r.created_at as string) ?? "",
+          })),
+          nextCursor: null,
+          stats: { balance: check.balance, ledger: check.ledger, lastHourEarned: check.lastHourEarned, ok: check.ok ? 1 : 0 },
         };
       }
 
@@ -522,7 +566,7 @@ export const adminAction = createServerFn({ method: "POST" })
         }
         if (p["active"] !== undefined) patch["active"] = Boolean(p["active"]);
         if (p["sortOrder"] !== undefined) patch["sort_order"] = Math.floor(Number(p["sortOrder"]));
-        if (p["iconUrl"] !== undefined) patch["icon_url"] = safeHttpsUrl(str("iconUrl", 300));
+        if (p["iconUrl"] !== undefined) patch["icon_url"] = await directImageUrl(str("iconUrl", 300));
 
         if (id) {
           if (Object.keys(patch).length === 0) throw new Error("Nothing to update.");
@@ -559,7 +603,7 @@ export const adminAction = createServerFn({ method: "POST" })
         if (p["name"] !== undefined) patch["name"] = str("name", 60);
         if (p["blockId"] !== undefined) patch["block_id"] = str("blockId", 80) || null;
         if (p["url"] !== undefined) patch["url"] = safeHttpsUrl(str("url", 300));
-        if (p["logoUrl"] !== undefined) patch["logo_url"] = safeHttpsUrl(str("logoUrl", 300));
+        if (p["logoUrl"] !== undefined) patch["logo_url"] = await directImageUrl(str("logoUrl", 300));
         if (p["reward"] !== undefined) patch["reward"] = num("reward", 1, 1000);
         if (p["dailyLimit"] !== undefined) patch["daily_limit"] = num("dailyLimit", 0, 500);
         if (p["cooldownSecs"] !== undefined) patch["cooldown_secs"] = num("cooldownSecs", 0, 86400);
@@ -659,5 +703,22 @@ function safeHttpsUrl(value: string): string | null {
     return u.protocol === "https:" ? u.toString() : null;
   } catch {
     return null;
+  }
+}
+
+/** imgbb page links (ibb.co/xyz) are turned into the direct i.ibb.co image link. */
+async function directImageUrl(value: string): Promise<string | null> {
+  const safe = safeHttpsUrl(value.trim());
+  if (!safe) return null;
+  const u = new URL(safe);
+  if (u.hostname !== "ibb.co" && u.hostname !== "www.ibb.co") return safe;
+  try {
+    const res = await fetch(safe, { headers: { "user-agent": "Mozilla/5.0" } });
+    const html = await res.text();
+    const m = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
+    const direct = m?.[1] ? safeHttpsUrl(m[1]) : null;
+    return direct && new URL(direct).hostname.endsWith("ibb.co") ? direct : safe;
+  } catch {
+    return safe;
   }
 }

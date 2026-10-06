@@ -1,12 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { ListChecks, Users, User, Wallet } from "lucide-react";
+import { ListChecks, PlayCircle, Users, User } from "lucide-react";
 import { haptic } from "@/lib/telegram";
 
 const SIDE = [
   { to: "/tasks", label: "Tasks", icon: ListChecks },
   { to: "/refer", label: "Refer", icon: Users },
   null,
-  { to: "/profile/wallet", label: "Wallet", icon: Wallet },
+  { to: "/ads", label: "Watch", icon: PlayCircle },
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
