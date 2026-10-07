@@ -92,11 +92,9 @@ export const telegramAuth = createServerFn({ method: "POST" })
           p_label: "New friend joined",
           p_meta: { referred: userId },
         });
-        await client
-          .from("users")
-          .update({ referral_pot: config.referralJoinReward })
-          .eq("id", referrerId)
-          .select("id");
+        // Add (never overwrite) — earlier unclaimed referral rewards must stay.
+        const { addReferralPot } = await import("./server/referral.server");
+        await addReferralPot(referrerId, config.referralJoinReward);
       }
 
       {

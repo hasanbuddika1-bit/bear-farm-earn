@@ -442,17 +442,28 @@ export const adminAction = createServerFn({ method: "POST" })
             payoutButtons(txId),
           );
         }
-        void sendMessage(
-          config.paymentChannelUrl.replace("https://t.me/", "@"),
-          `💸 <b>NEW PAYOUT SENT</b> ✅\n\n` +
-            `👤 Farmer: <b>${shown}</b>\n` +
-            `💵 Amount: <b>$${usd} USDT</b>\n` +
-            `🌐 Network: BEP-20 (BSC)\n` +
-            `🔗 TX: <code>${shortTx.replace(/[<>&]/g, "")}</code>\n` +
-            `🕒 ${when}\n\n` +
-            `🐻 Bear Farm — real farming, real payouts 🌾`,
-          payoutButtons(txId),
-        );
+        {
+          const { sendPhoto } = await import("./server/telegram.server");
+          let origin = "https://bear-farm-earn.vercel.app";
+          try {
+            const { getRequest } = await import("@tanstack/react-start/server");
+            origin = new URL(getRequest().url).origin;
+          } catch {
+            /* keep fallback */
+          }
+          void sendPhoto(
+            config.paymentChannelUrl.replace("https://t.me/", "@"),
+            `${origin}/payment-success.jpg`,
+            `💸 <b>PAYMENT SUCCESS</b> ✅\n\n` +
+              `👤 Farmer: <b>${shown}</b>\n` +
+              `💵 Amount: <b>$${usd} USDT</b>\n` +
+              `🌐 Network: BEP-20 (BSC)\n` +
+              `🔗 TX: <code>${shortTx.replace(/[<>&]/g, "")}</code>\n` +
+              `🕒 ${when}\n\n` +
+              `🐻 Bear Farm — real farming, real payouts 🌾`,
+            payoutButtons(txId),
+          );
+        }
         await audit(admin.telegram_id, "approveWithdrawal", id, { txId });
         return { ok: true, message: "Withdrawal approved." };
       }
