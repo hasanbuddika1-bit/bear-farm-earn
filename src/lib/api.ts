@@ -20,7 +20,11 @@ import {
   setWallet as setWalletFn,
   updatePreferences as updatePreferencesFn,
 } from "./wallet.functions";
-import { publicLeaderboard as publicLeaderboardFn, publicPayouts as publicPayoutsFn } from "./public.functions";
+import {
+  publicLeaderboard as publicLeaderboardFn,
+  publicPayouts as publicPayoutsFn,
+  referralLeaderboard as referralLeaderboardFn,
+} from "./public.functions";
 import {
   adminAction as adminActionFn,
   adminList as adminListFn,
@@ -186,6 +190,10 @@ export const api = {
       data: { token: getSessionToken(), cursor: input.cursor ?? null },
     });
     return { rows: result.entries, nextCursor: result.nextCursor };
+  },
+
+  async referralLeaderboard() {
+    return referralLeaderboardFn({ data: { token: getSessionToken() || null } });
   },
 
   async publicLeaderboard(_input: { cursor?: string | null } = {}): Promise<{
