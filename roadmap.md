@@ -1,4 +1,7 @@
 # Roadmap
+- [ ] Use uploaded payment banner in approved payout channel posts
+- [ ] Redesign leaderboard and add referral ranking
+- [ ] Check referral calculations and fix verified issues with tests
 - [x] Withdraw approve: user + payout channel messages with "View transaction" + "Open Bear Farm" buttons
 - [x] Welcome / start message with banner photo, nicer text
 - [x] /start not arriving: admin "Connect bot" button sets webhook
