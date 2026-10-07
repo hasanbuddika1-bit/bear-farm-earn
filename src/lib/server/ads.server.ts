@@ -80,36 +80,34 @@ async function progressReferral(userId: string, referredBy: string | null, creat
   if (stageNow === "fake" || stageNow === "verified") return;
 
   const ageDays = Math.floor((Date.now() - Date.parse(createdAt)) / 86_400_000);
-  const day1 = Number(ref.data.ads_day1) + (ageDays < 1 ? 1 : 0);
-  const day2 = Number(ref.data.ads_day2) + (ageDays >= 1 ? 1 : 0);
+  const { advanceReferral } = await import("../referral-rules");
+  const next = advanceReferral(
+    {
+      stage: stageNow as "pending" | "half",
+      earned: Number(ref.data.earned),
+      adsDay1: Number(ref.data.ads_day1),
+      adsDay2: Number(ref.data.ads_day2),
+    },
+    ageDays,
+    config,
+  );
 
-  let stage = stageNow;
-  let earned = Number(ref.data.earned);
-  let potDelta = 0;
-  if (stage === "pending" && day1 >= config.referralStage1Ads) {
-    stage = "half";
-    earned += config.referralStage1Reward;
-    potDelta = config.referralStage1Reward;
-  } else if (stage === "half" && day2 >= config.referralStage2Ads) {
-    stage = "verified";
-    earned += config.referralStage2Reward;
-    potDelta = config.referralStage2Reward;
-  }
-
-  await client
+  // Only one concurrent ad view may advance the stage (guard on the old stage).
+  const updated = await client
     .from("referrals")
-    .update({ stage, earned, ads_day1: day1, ads_day2: day2, updated_at: new Date().toISOString() })
-    .eq("id", ref.data.id as number);
+    .update({
+      stage: next.stage,
+      earned: next.earned,
+      ads_day1: next.adsDay1,
+      ads_day2: next.adsDay2,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", ref.data.id as number)
+    .eq("stage", stageNow)
+    .select("id");
 
-  if (potDelta > 0) {
-    const referrer = await client
-      .from("users")
-      .select("referral_pot")
-      .eq("id", ref.data.referrer_id as string)
-      .single();
-    await client
-      .from("users")
-      .update({ referral_pot: Number(referrer.data?.referral_pot ?? 0) + potDelta })
-      .eq("id", ref.data.referrer_id as string);
+  if (next.potDelta > 0 && updated.data && updated.data.length > 0) {
+    const { addReferralPot } = await import("./referral.server");
+    await addReferralPot(ref.data.referrer_id as string, next.potDelta);
   }
 }
