@@ -65,10 +65,13 @@ export const telegramAuth = createServerFn({ method: "POST" })
           photo_url: verified.user.photoUrl,
           device_hash: data.deviceId || null,
           signup_ip: ip,
+          // Second accounts on a device can still open and use the app (so testers and
+          // moderators never hit a locked screen), but they earn no referral reward and
+          // cannot withdraw — see requestWithdrawal.
           referred_by: duplicate ? null : referrerId,
-          suspended: duplicate,
+          suspended: false,
           suspended_reason: duplicate
-            ? "Multiple accounts from the same device are not allowed."
+            ? "Duplicate device: referral rewards and withdrawals disabled."
             : null,
           is_admin: telegramId === process.env["BEARFARM_ADMIN_TELEGRAM_ID"],
         })
@@ -120,7 +123,7 @@ export const telegramAuth = createServerFn({ method: "POST" })
         );
       }
       void notifyAdmin(
-        `🆕 New farmer joined\n👤 ${verified.user.firstName ?? "Farmer"} (${telegramId})${duplicate ? "\n⚠️ Auto-suspended: duplicate device" : ""}`,
+        `🆕 New farmer joined\n👤 ${verified.user.firstName ?? "Farmer"} (${telegramId})${duplicate ? "\n⚠️ Duplicate device — no referral reward, withdrawals blocked" : ""}`,
       );
     } else {
       await client
