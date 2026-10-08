@@ -11,6 +11,15 @@ export interface PayoutRow {
   name: string;
   netUsd: number;
   paidAt: number;
+  /** On-chain BEP-20 transaction hash, verifiable on BscScan. */
+  txId: string | null;
+  /** Shortened receiving wallet (0x1234…abcd) — matches the on-chain transfer. */
+  wallet: string;
+}
+
+function shortWallet(addr: string | null | undefined) {
+  const a = String(addr ?? "");
+  return a.length > 12 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a;
 }
 
 /** Public top-100. Only display names and balances are exposed by the view. */
@@ -55,25 +64,63 @@ export const publicLeaderboard = createServerFn({ method: "POST" })
     };
   });
 
-/** Public payout wall — names and amounts only, no wallet addresses. */
+/**
+ * Public payout wall. Each row carries the on-chain tx hash and a shortened wallet so
+ * anyone can verify the payment on BscScan. Telegram IDs and full addresses stay private.
+ */
 export const publicPayouts = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ recent: PayoutRow[]; totalPaidUsd: number; pendingCount: number }> => {
+  async (): Promise<{
+    recent: PayoutRow[];
+    totalPaidUsd: number;
+    pendingCount: number;
+    payoutCount: number;
+  }> => {
     const { db } = await import("./server/db.server");
     const client = db();
-    const [{ data: rows }, { data: stats }, { count: pending }] = await Promise.all([
-      client.from("public_payouts").select("name, net_usd, paid_at").limit(50),
-      client.from("stats").select("paid_usd").eq("id", "global").maybeSingle(),
-      client
-        .from("withdrawals")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "pending"),
-    ]);
+    const [{ data: rows }, { data: stats }, { count: pending }, { count: paidCount }] =
+      await Promise.all([
+        client
+          .from("withdrawals")
+          .select("user_id, net_usd, tx_id, wallet_address, updated_at")
+          .eq("status", "approved")
+          .order("updated_at", { ascending: false })
+          .limit(50),
+        client.from("stats").select("paid_usd").eq("id", "global").maybeSingle(),
+        client
+          .from("withdrawals")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending"),
+        client
+          .from("withdrawals")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "approved"),
+      ]);
 
-    const recent: PayoutRow[] = (rows ?? []).map((r) => ({
-      name: (r.name as string) ?? "Farmer",
-      netUsd: Number(r.net_usd),
-      paidAt: Date.parse(r.paid_at as string),
-    }));
+    const ids = [...new Set((rows ?? []).map((r) => r.user_id as string))];
+    const names = new Map<string, string>();
+    if (ids.length > 0) {
+      const { data: users } = await client
+        .from("users")
+        .select("id, first_name, username")
+        .in("id", ids);
+      for (const u of users ?? []) {
+        names.set(
+          u.id as string,
+          ((u.first_name as string) || (u.username as string) || "Farmer").slice(0, 24),
+        );
+      }
+    }
+
+    const recent: PayoutRow[] = (rows ?? []).map((r) => {
+      const tx = String(r.tx_id ?? "").trim();
+      return {
+        name: names.get(r.user_id as string) ?? "Farmer",
+        netUsd: Number(r.net_usd),
+        paidAt: Date.parse(r.updated_at as string),
+        txId: /^0x[0-9a-fA-F]{64}$/.test(tx) ? tx : null,
+        wallet: shortWallet(r.wallet_address as string),
+      };
+    });
     const fromStats = Number(stats?.paid_usd ?? 0);
     const totalPaidUsd =
       fromStats > 0 ? fromStats : recent.reduce((sum, r) => sum + r.netUsd, 0);
@@ -82,6 +129,7 @@ export const publicPayouts = createServerFn({ method: "GET" }).handler(
       recent,
       totalPaidUsd: Math.round(totalPaidUsd * 10000) / 10000,
       pendingCount: pending ?? 0,
+      payoutCount: paidCount ?? recent.length,
     };
   },
 );

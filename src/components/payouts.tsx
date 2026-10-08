@@ -4,6 +4,7 @@ import { ExternalLink, ShieldCheck } from "lucide-react";
 
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
+import { openExternal } from "@/lib/telegram";
 import { formatUsd } from "@/lib/format";
 import { EmptyState } from "@/components/ui-kit";
 
@@ -91,7 +92,7 @@ export function PayoutProofs({ limit = 20 }: { limit?: number }) {
         </div>
         <div className="rounded-xl bg-primary/10 p-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Payouts</p>
-          <p className="mt-1 font-display text-lg font-extrabold gold-text">{q.data?.recent.length ?? 0}</p>
+          <p className="mt-1 font-display text-lg font-extrabold gold-text">{q.data?.payoutCount ?? 0}</p>
         </div>
       </div>
 
@@ -102,30 +103,45 @@ export function PayoutProofs({ limit = 20 }: { limit?: number }) {
           <EmptyState emoji="💸" text="No payouts published yet." />
         ) : (
           rows.map((row, i) => (
-            <div key={i} className="flex items-center gap-3 rounded-xl bg-secondary/40 px-3 py-2">
-              <UsdtLogo className="size-8" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-display text-sm font-bold">{maskName(row.name)}</p>
-                <p className="text-[10px] text-muted-foreground">{utcTime(row.paidAt)}</p>
+            <div key={i} className="rounded-xl bg-secondary/40 px-3 py-2">
+              <div className="flex items-center gap-3">
+                <UsdtLogo className="size-8" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-display text-sm font-bold">{maskName(row.name)}</p>
+                  <p className="text-[10px] text-muted-foreground">{utcTime(row.paidAt)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-display text-sm font-extrabold text-usdt">{formatUsd(row.netUsd)}</p>
+                  <p className="text-[9px] font-bold uppercase text-success">✓ Paid · BEP-20</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="font-display text-sm font-extrabold text-usdt">{formatUsd(row.netUsd)}</p>
-                <p className="text-[9px] font-bold uppercase text-success">✓ Paid</p>
-              </div>
+              {row.txId ? (
+                <button
+                  type="button"
+                  onClick={() => openExternal(`https://bscscan.com/tx/${row.txId}`)}
+                  className="mt-1.5 flex w-full items-center justify-between gap-2 rounded-lg bg-background/40 px-2 py-1 text-left font-mono text-[10px] text-muted-foreground"
+                >
+                  <span className="truncate">
+                    Tx {row.txId.slice(0, 10)}…{row.txId.slice(-8)} · to {row.wallet}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-1 font-sans font-bold text-usdt">
+                    BscScan <ExternalLink className="size-3" />
+                  </span>
+                </button>
+              ) : null}
             </div>
           ))
         )}
       </div>
 
       {config?.paymentChannelUrl ? (
-        <a
-          href={config.paymentChannelUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center justify-center gap-2 border-t border-border bg-usdt/10 px-4 py-3 font-display text-sm font-bold text-usdt"
+        <button
+          type="button"
+          onClick={() => openExternal(config.paymentChannelUrl)}
+          className="flex w-full items-center justify-center gap-2 border-t border-border bg-usdt/10 px-4 py-3 font-display text-sm font-bold text-usdt"
         >
           View Payout Proofs Channel <ExternalLink className="size-4" />
-        </a>
+        </button>
       ) : null}
     </section>
   );

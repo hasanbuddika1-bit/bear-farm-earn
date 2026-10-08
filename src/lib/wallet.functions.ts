@@ -85,6 +85,28 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
       .limit(1);
     if ((pending.data ?? []).length > 0) throw new Error("You already have a pending withdrawal.");
 
+    // One paying account per device: only the first account created on a device may withdraw.
+    {
+      const me = await client
+        .from("users")
+        .select("device_hash, created_at")
+        .eq("id", row.id)
+        .maybeSingle();
+      const device = me.data?.device_hash as string | null | undefined;
+      if (device) {
+        const older = await client
+          .from("users")
+          .select("id")
+          .eq("device_hash", device)
+          .lt("created_at", me.data?.created_at as string)
+          .neq("id", row.id)
+          .limit(1);
+        if ((older.data ?? []).length > 0) {
+          throw new Error("Withdrawals are allowed for only one account per device.");
+        }
+      }
+    }
+
     const math = withdrawalMath(data.tokens, config);
     if (math.netUsd <= 0) throw new Error("Amount is too small after fees.");
 

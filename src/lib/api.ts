@@ -208,15 +208,17 @@ export const api = {
   },
 
   async publicPayouts(_input: { cursor?: string | null } = {}): Promise<{
-    recent: { name: string; netUsd: number; paidAt: number }[];
+    recent: { name: string; netUsd: number; paidAt: number; txId: string | null; wallet: string }[];
     totalPaidUsd: number;
-    pendingUsd: number;
+    pendingCount: number;
+    payoutCount: number;
   }> {
     const result = await publicPayoutsFn();
     return {
       recent: result.recent,
       totalPaidUsd: result.totalPaidUsd,
-      pendingUsd: result.pendingCount,
+      pendingCount: result.pendingCount,
+      payoutCount: result.payoutCount,
     };
   },
 
