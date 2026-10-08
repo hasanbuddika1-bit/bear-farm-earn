@@ -11,6 +11,15 @@ export interface PayoutRow {
   name: string;
   netUsd: number;
   paidAt: number;
+  /** On-chain BEP-20 transaction hash, verifiable on BscScan. */
+  txId: string | null;
+  /** Shortened receiving wallet (0x1234…abcd) — matches the on-chain transfer. */
+  wallet: string;
+}
+
+function shortWallet(addr: string | null | undefined) {
+  const a = String(addr ?? "");
+  return a.length > 12 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a;
 }
 
 /** Public top-100. Only display names and balances are exposed by the view. */
