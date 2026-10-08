@@ -138,7 +138,7 @@ export function PayoutProofs({ limit = 20 }: { limit?: number }) {
         <button
           type="button"
           onClick={() => openExternal(config.paymentChannelUrl)}
-          className="w-full "flex items-center justify-center gap-2 border-t border-border bg-usdt/10 px-4 py-3 font-display text-sm font-bold text-usdt"
+          className="flex w-full items-center justify-center gap-2 border-t border-border bg-usdt/10 px-4 py-3 font-display text-sm font-bold text-usdt"
         >
           View Payout Proofs Channel <ExternalLink className="size-4" />
         </button>

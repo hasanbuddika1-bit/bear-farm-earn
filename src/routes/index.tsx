@@ -7,6 +7,7 @@ import { UserHeader, BalanceCard } from "@/components/BalanceCard";
 import { MiningCard } from "@/components/MiningCard";
 import { DailyRewardCard, RewardCodeCard } from "@/components/DailyReward";
 import { GuideBox, PopButton } from "@/components/ui-kit";
+import { PayoutProofs } from "@/components/payouts";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -54,6 +55,16 @@ function Home() {
 
       <DailyRewardCard user={user} config={config} serverOffset={serverOffset} />
       <RewardCodeCard config={config} />
+
+      <div className="mx-4 mt-4">
+        <PayoutProofs limit={3} />
+        <Link
+          to="/profile/payouts"
+          className="mt-2 block text-center font-display text-xs font-bold text-usdt underline-offset-4 hover:underline"
+        >
+          See all payouts →
+        </Link>
+      </div>
 
       <div className="mx-4 mt-4 grid grid-cols-2 gap-2">
         <PopButton variant="accent" onClick={() => openExternal(config.communityChannelUrl)}>
