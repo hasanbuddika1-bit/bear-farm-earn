@@ -7,6 +7,7 @@ import { api, errorMessage, newIdempotencyKey } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { formatDate, formatTokens } from "@/lib/format";
 import { hapticNotify, shareReferral } from "@/lib/telegram";
+import { BOT_REFERRAL_PREFIX } from "@/lib/bot-config";
 import { HistoryRow } from "@/components/payouts";
 import { Card, EmptyState, GuideBox, PopButton, SectionTitle, StatPill } from "@/components/ui-kit";
 
@@ -59,7 +60,7 @@ function ReferPage() {
   });
 
   if (!user || !config) return null;
-  const link = `https://t.me/${config.botUsername}/earn?startapp=${user.referralCode}`;
+  const link = `${BOT_REFERRAL_PREFIX}${user.referralCode}`;
 
   return (
     <div className="pb-6">
