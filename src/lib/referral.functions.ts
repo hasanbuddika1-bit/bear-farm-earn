@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import type { ReferralRow } from "./types";
+import { BOT_REFERRAL_PREFIX } from "./bot-config";
 
 export const listReferrals = createServerFn({ method: "POST" })
   .inputValidator((input: { token: string }) => ({ token: String(input?.token ?? "") }))
@@ -16,11 +17,9 @@ export const listReferrals = createServerFn({ method: "POST" })
       link: string;
     }> => {
       const { requireUser } = await import("./server/user.server");
-      const { loadConfig } = await import("./server/config.server");
       const { db } = await import("./server/db.server");
 
       const { row } = await requireUser(data.token);
-      const config = await loadConfig();
       const client = db();
 
       const { data: refs } = await client
@@ -61,7 +60,7 @@ export const listReferrals = createServerFn({ method: "POST" })
         active: rows.filter((r) => r.stage === "half" || r.stage === "verified").length,
         unclaimed: Number(row.referral_pot),
         totalEarned: rows.reduce((sum, r) => sum + (r.stage === "fake" ? 0 : r.earned), 0),
-        link: `https://t.me/${config.botUsername}/earn?startapp=${row.telegram_id}`,
+        link: `${BOT_REFERRAL_PREFIX}${row.telegram_id}`,
       };
     },
   );
