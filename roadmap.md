@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Change bot identity and securely replace bot token; verify links
 - [x] Use uploaded payment banner in approved payout channel posts
 - [x] Redesign leaderboard and add referral ranking
 - [x] Check referral calculations and fix verified issues with tests

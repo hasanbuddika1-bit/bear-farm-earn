@@ -1,6 +1,7 @@
 import { RefreshCw, WifiOff, ShieldAlert, Send, Wrench } from "lucide-react";
 import logo from "@/assets/bear-farm-logo.png";
 import type { AuthErrorInfo, AuthStatus } from "@/lib/auth-context";
+import { BOT_MINI_APP_URL } from "@/lib/bot-config";
 
 const STAGE_TEXT: Record<string, string> = {
   booting: "Waking up the farm…",
@@ -60,7 +61,7 @@ export function LoadingScreen({
 
           {error?.kind === "telegram" ? (
             <a
-              href="https://t.me/Bear_Farmbot?startapp=1"
+              href={BOT_MINI_APP_URL}
               className="btn-pop active:btn-pop-active mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-display font-bold text-primary-foreground"
             >
               <Send className="size-4" /> Reopen from Telegram
