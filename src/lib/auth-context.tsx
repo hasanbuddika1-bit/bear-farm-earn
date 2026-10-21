@@ -14,6 +14,7 @@ import { api } from "./api";
 import { clearSessionToken, onBalanceChanged } from "./session";
 import { initTelegram, telegram } from "./telegram";
 import { getDeviceId } from "./device";
+import { BOT_USERNAME } from "./bot-config";
 import type { AppConfig, UserDoc } from "./types";
 
 export type AuthStatus =
@@ -99,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setError({
           kind: "telegram",
           title: "Open inside Telegram",
-          message: "Bear Farm only runs inside the Telegram app. Open @Bear_Farmbot to continue.",
+          message: `Bear Farm only runs inside the Telegram app. Open @${BOT_USERNAME} to continue.`,
         });
         return;
       }

@@ -1,5 +1,6 @@
 import type { AppConfig } from "../types";
 import { db } from "./db.server";
+import { BOT_USERNAME, BOT_REFERRAL_PREFIX } from "../bot-config";
 
 export const DEFAULT_CONFIG: AppConfig = {
   tokenName: "Bear Farm Token",
@@ -22,8 +23,8 @@ export const DEFAULT_CONFIG: AppConfig = {
   withdrawFeePercent: 5,
   communityChannelUrl: "https://t.me/bearfarmCommunity",
   paymentChannelUrl: "https://t.me/bearfarm_pay_out",
-  botUsername: "Bear_Farmbot",
-  referralLink: "https://t.me/Bear_Farmbot/earn?startapp=",
+  botUsername: BOT_USERNAME,
+  referralLink: BOT_REFERRAL_PREFIX,
   adsEnabled: true,
   maintenance: false,
 };
@@ -54,7 +55,8 @@ export async function loadConfig(): Promise<AppConfig> {
   if (cache && Date.now() - cache.at < TTL_MS) return cache.value;
   const { data } = await db().from("app_config").select("data").eq("id", "default").maybeSingle();
   const stored = (data?.data ?? {}) as Partial<AppConfig>;
-  const value = { ...DEFAULT_CONFIG, ...stored };
+  // Legacy saved settings must not send users back to the retired bot.
+  const value = { ...DEFAULT_CONFIG, ...stored, botUsername: BOT_USERNAME, referralLink: BOT_REFERRAL_PREFIX };
   cache = { value, at: Date.now() };
   return value;
 }

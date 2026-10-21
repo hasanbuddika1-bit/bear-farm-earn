@@ -1,4 +1,5 @@
 /** Telegram initData verification + bot messaging. Server-only. */
+import { BOT_MINI_APP_URL } from "../bot-config";
 
 function botToken() {
   const token = process.env["TELEGRAM_BOT_TOKEN"];
@@ -81,7 +82,7 @@ export async function verifyInitData(
 }
 
 export function miniAppUrl() {
-  return `https://t.me/${process.env["BEARFARM_BOT_USERNAME"] ?? "Bear_Farmbot"}/earn`;
+  return BOT_MINI_APP_URL;
 }
 
 type Button = { text: string; url: string };
