@@ -50,6 +50,45 @@ export const setWallet = createServerFn({ method: "POST" })
   });
 
 /** Debits the tokens and creates a pending payout in one guarded step. */
+/** Server-side progress toward the withdrawal requirements. */
+async function withdrawProgress(userId: string) {
+  const { db } = await import("./server/db.server");
+  const client = db();
+  const dayStart = new Date().toISOString().slice(0, 10) + "T00:00:00Z";
+  const [main, claims, ads, refs] = await Promise.all([
+    client.from("tasks").select("id").eq("active", true).eq("group_name", "main"),
+    client.from("task_claims").select("task_key").eq("user_id", userId).eq("day_key", "once"),
+    client
+      .from("ad_impressions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("created_at", dayStart),
+    client
+      .from("referrals")
+      .select("id", { count: "exact", head: true })
+      .eq("referrer_id", userId)
+      .in("stage", ["half", "verified"]),
+  ]);
+  const mainIds = (main.data ?? []).map((t) => String(t.id));
+  const done = new Set((claims.data ?? []).map((c) => String(c.task_key)));
+  return {
+    mainTotal: mainIds.length,
+    mainDone: mainIds.filter((id) => done.has(id)).length,
+    adsToday: ads.count ?? 0,
+    activeReferrals: refs.count ?? 0,
+  };
+}
+
+export const withdrawRequirements = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string }) => ({ token: String(input?.token ?? "") }))
+  .handler(async ({ data }) => {
+    const { requireUser } = await import("./server/user.server");
+    const { withdrawBlockers } = await import("./ad-rules");
+    const { row } = await requireUser(data.token);
+    const progress = await withdrawProgress(row.id);
+    return { ...progress, blockers: withdrawBlockers(progress) };
+  });
+
 export const requestWithdrawal = createServerFn({ method: "POST" })
   .inputValidator((input: { token: string; tokens: number; idempotencyKey: string }) => ({
     token: String(input?.token ?? ""),
@@ -76,6 +115,12 @@ export const requestWithdrawal = createServerFn({ method: "POST" })
       throw new Error(`Minimum withdrawal is ${minimum} tokens.`);
     }
     if (data.tokens > Number(row.balance)) throw new Error("Not enough balance.");
+
+    {
+      const { withdrawBlockers } = await import("./ad-rules");
+      const blockers = withdrawBlockers(await withdrawProgress(row.id));
+      if (blockers.length > 0) throw new Error(blockers[0]);
+    }
 
     const pending = await client
       .from("withdrawals")
