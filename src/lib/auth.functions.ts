@@ -73,7 +73,7 @@ export const telegramAuth = createServerFn({ method: "POST" })
           suspended_reason: duplicate
             ? "Duplicate device: referral rewards and withdrawals disabled."
             : null,
-          is_admin: telegramId === process.env["BEARFARM_ADMIN_TELEGRAM_ID"],
+          is_admin: (await import("./server/admins.server")).isAdminTelegramId(String(telegramId)),
         })
         .select("id")
         .single();
@@ -134,7 +134,7 @@ export const telegramAuth = createServerFn({ method: "POST" })
           last_name: verified.user.lastName,
           photo_url: verified.user.photoUrl,
           // Keeps the operator account marked as admin even if it signed up earlier.
-          is_admin: telegramId === process.env["BEARFARM_ADMIN_TELEGRAM_ID"],
+          is_admin: (await import("./server/admins.server")).isAdminTelegramId(String(telegramId)),
           updated_at: new Date().toISOString(),
         })
         .eq("id", userId);

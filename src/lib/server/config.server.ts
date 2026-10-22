@@ -25,6 +25,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   paymentChannelUrl: "https://t.me/bearfarm_pay_out",
   botUsername: BOT_USERNAME,
   referralLink: BOT_REFERRAL_PREFIX,
+  adRewardSteps: [100, 80, 70, 60, 50],
   adsEnabled: true,
   maintenance: false,
 };

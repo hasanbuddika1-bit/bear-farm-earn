@@ -24,6 +24,7 @@ export interface AppConfig {
   paymentChannelUrl: string;
   botUsername: string;
   referralLink: string;
+  adRewardSteps: number[];
   adsEnabled: boolean;
   maintenance: boolean;
 }
@@ -123,6 +124,7 @@ export interface AdNetworkDoc {
   url: string;
   logoUrl: string;
   reward: number;
+  rewardSteps: number[];
   dailyLimit: number;
   watchedToday: number;
   remainingToday: number;

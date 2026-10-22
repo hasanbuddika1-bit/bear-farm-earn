@@ -13,6 +13,7 @@ export const listAdNetworks = createServerFn({ method: "POST" })
     const { loadConfig } = await import("./server/config.server");
     const { AD_NETWORK_COLUMNS } = await import("./server/ads.server");
     const { db } = await import("./server/db.server");
+    const { adRewardForIndex } = await import("./ad-rules");
 
     const { row } = await requireUser(data.token);
     const config = await loadConfig();
@@ -43,6 +44,7 @@ export const listAdNetworks = createServerFn({ method: "POST" })
 
     const networks: AdNetworkDoc[] = ((nets.data ?? []) as unknown as AdNetworkRow[]).map((n) => {
       const used = perNetwork.get(n.id) ?? 0;
+      const steps = config.adRewardSteps?.length ? config.adRewardSteps : [Number(n.reward)];
       const cooldownLeft = Math.max(
         0,
         Math.ceil(((lastAt.get(n.id) ?? 0) + n.cooldown_secs * 1000 - Date.now()) / 1000),
@@ -54,10 +56,11 @@ export const listAdNetworks = createServerFn({ method: "POST" })
         blockId: n.block_id ?? "",
         url: n.url ?? "",
         logoUrl: n.logo_url ?? "",
-        reward: Number(n.reward),
-        dailyLimit: Number(n.daily_limit),
+        reward: adRewardForIndex(steps, used) ?? 0,
+        rewardSteps: steps,
+        dailyLimit: steps.length,
         watchedToday: used,
-        remainingToday: Math.max(0, Number(n.daily_limit) - used),
+        remainingToday: Math.max(0, steps.length - used),
         minWatchSecs: Number(n.min_watch_secs),
         cooldownLeft,
       };
@@ -108,8 +111,11 @@ export const startAdSession = createServerFn({ method: "POST" })
         .eq("user_id", row.id)
         .eq("network", n.id)
         .gte("created_at", dayStart);
-      if ((used.count ?? 0) >= Number(n.daily_limit)) {
-        throw new Error("Daily limit reached for this network. Come back tomorrow.");
+      const { adRewardForIndex } = await import("./ad-rules");
+      const steps = config.adRewardSteps?.length ? config.adRewardSteps : [Number(n.reward)];
+      const stepReward = adRewardForIndex(steps, used.count ?? 0);
+      if (stepReward === null) {
+        throw new Error("Daily limit reached for this card. Come back tomorrow.");
       }
 
       const last = await client
@@ -125,14 +131,14 @@ export const startAdSession = createServerFn({ method: "POST" })
         if (left > 0) throw new Error(`Please wait ${Math.ceil(left / 1000)}s before the next ad.`);
       }
 
-      const wait = Math.min(120, Math.max(5, Number(n.min_watch_secs)));
+      const wait = Math.min(120, Math.max(3, Number(n.min_watch_secs)));
       const readyAt = Date.now() + wait * 1000;
       const session = await client
         .from("ad_sessions")
         .insert({
           user_id: row.id,
           network: n.id,
-          reward: Number(n.reward),
+          reward: stepReward,
           ready_at: new Date(readyAt).toISOString(),
           expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
         })

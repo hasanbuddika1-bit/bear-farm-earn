@@ -181,8 +181,8 @@ export async function connectWebhook(origin: string, secret: string) {
 }
 
 export async function notifyAdmin(text: string) {
-  const adminId = process.env["BEARFARM_ADMIN_TELEGRAM_ID"];
-  if (adminId) await sendMessage(adminId, text, false);
+  const { adminTelegramIds } = await import("./admins.server");
+  await Promise.all(adminTelegramIds().map((id) => sendMessage(id, text, false)));
 }
 
 /** Channel membership is checked with the bot, never trusted from the client. */
