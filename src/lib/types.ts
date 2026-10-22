@@ -124,6 +124,7 @@ export interface AdNetworkDoc {
   url: string;
   logoUrl: string;
   reward: number;
+  rewardSteps: number[];
   dailyLimit: number;
   watchedToday: number;
   remainingToday: number;
