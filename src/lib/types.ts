@@ -24,6 +24,7 @@ export interface AppConfig {
   paymentChannelUrl: string;
   botUsername: string;
   referralLink: string;
+  adRewardSteps: number[];
   adsEnabled: boolean;
   maintenance: boolean;
 }

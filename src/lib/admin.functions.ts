@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 const SESSION_HOURS = 2;
-const DEFAULT_CONFIG_ARRAY_KEYS = ["dailyRewards"];
+const DEFAULT_CONFIG_ARRAY_KEYS = ["dailyRewards", "adRewardSteps"];
 
 /** Only JSON-safe scalars cross the wire to the admin screen. */
 export type AdminRow = Record<string, string | number | boolean | null>;
@@ -11,8 +11,8 @@ async function requireAdmin(token: string, adminToken: string) {
   const { db } = await import("./server/db.server");
   const { row } = await requireUser(token, { allowSuspended: true });
 
-  const adminTelegramId = process.env["BEARFARM_ADMIN_TELEGRAM_ID"];
-  if (!adminTelegramId || row.telegram_id !== adminTelegramId) {
+  const { isAdminTelegramId } = await import("./server/admins.server");
+  if (!isAdminTelegramId(row.telegram_id)) {
     throw new Error("Not authorised.");
   }
   const session = await db()
@@ -50,10 +50,10 @@ export const adminLogin = createServerFn({ method: "POST" })
     const { row } = await requireUser(data.token, { allowSuspended: true });
     await rateLimit(`adminlogin:${row.id}`, 6, 900);
 
-    const adminTelegramId = process.env["BEARFARM_ADMIN_TELEGRAM_ID"]?.trim();
+    const { isAdminTelegramId } = await import("./server/admins.server");
     const username = process.env["BEARFARM_ADMIN_USERNAME"]?.trim();
     const password = process.env["BEARFARM_ADMIN_PASSWORD"]?.trim();
-    if (!adminTelegramId || !username || !password) throw new Error("Admin access is not configured.");
+    if (!username || !password) throw new Error("Admin access is not configured.");
 
     // Mobile keyboards auto-capitalise and add trailing spaces: usernames are
     // case-insensitive, both fields are trimmed, and compared in constant time.
@@ -67,7 +67,7 @@ export const adminLogin = createServerFn({ method: "POST" })
     };
     const userOk = await same(data.username.trim().toLowerCase(), username.toLowerCase());
     const passOk = await same(data.password.trim(), password);
-    const ok = row.telegram_id === adminTelegramId && userOk && passOk;
+    const ok = isAdminTelegramId(row.telegram_id) && userOk && passOk;
     if (!ok) {
       await audit(row.telegram_id, "admin_login_failed", null, { username: data.username });
       void notifyAdmin("🚨 Failed admin login attempt.");
@@ -712,7 +712,10 @@ export const adminAction = createServerFn({ method: "POST" })
             next[key] = value === true || value === "true" || value === "1";
           } else if (Array.isArray((current as unknown as Record<string, unknown>)[key])) {
             const arr = Array.isArray(value) ? value.map((v) => Math.max(0, Math.floor(Number(v)))) : null;
-            if (!arr || arr.length !== 7) throw new Error("Daily rewards need 7 values.");
+            if (key === "adRewardSteps") {
+              if (!arr || arr.length < 1 || arr.length > 20 || arr.some((v) => v < 1 || v > 1000))
+                throw new Error("Ad rewards: 1-20 values, each 1-1000.");
+            } else if (!arr || arr.length !== 7) throw new Error("Daily rewards need 7 values.");
             next[key] = arr;
           } else {
             next[key] = String(value).slice(0, 300);

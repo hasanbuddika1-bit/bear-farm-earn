@@ -1,3 +1,4 @@
+import { requireGateAd } from "./adsgram";
 import { bootstrap as bootstrapFn, me as meFn, telegramAuth as telegramAuthFn } from "./auth.functions";
 import {
   claimDaily as claimDailyFn,
@@ -17,6 +18,7 @@ import {
   listLedger as listLedgerFn,
   listWithdrawals as listWithdrawalsFn,
   requestWithdrawal as requestWithdrawalFn,
+  withdrawRequirements as withdrawRequirementsFn,
   setWallet as setWalletFn,
   updatePreferences as updatePreferencesFn,
 } from "./wallet.functions";
@@ -64,12 +66,14 @@ export const api = {
   },
 
   async startMining(): Promise<{ endsAt: number }> {
+    await requireGateAd();
     const user = await startMiningFn({ data: { token: getSessionToken() } });
     notifyBalanceChanged();
     return { endsAt: user.mining.endsAt ?? 0 };
   },
 
   async claimMining(input: { idempotencyKey: string }): Promise<{ awarded: number; balance: number }> {
+    await requireGateAd();
     const result = await claimMiningFn({
       data: { token: getSessionToken(), idempotencyKey: input.idempotencyKey },
     });
@@ -82,6 +86,7 @@ export const api = {
     streak: number;
     balance: number;
   }> {
+    await requireGateAd();
     const result = await claimDailyFn({ data: { token: getSessionToken() } });
     notifyBalanceChanged();
     return { awarded: result.awarded, streak: result.streak, balance: result.user.balance };
@@ -137,6 +142,7 @@ export const api = {
   },
 
   async claimReferralEarnings(input: { idempotencyKey: string }) {
+    await requireGateAd();
     const result = await claimReferralEarningsFn({
       data: { token: getSessionToken(), idempotencyKey: input.idempotencyKey },
     });
@@ -164,7 +170,12 @@ export const api = {
     return { ok: true };
   },
 
+  async withdrawRequirements() {
+    return withdrawRequirementsFn({ data: { token: getSessionToken() } });
+  },
+
   async requestWithdrawal(input: { amountTokens: number; idempotencyKey: string }) {
+    await requireGateAd();
     const result = await requestWithdrawalFn({
       data: {
         token: getSessionToken(),
