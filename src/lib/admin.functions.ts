@@ -365,7 +365,7 @@ export const adminAction = createServerFn({ method: "POST" })
       payload: (input?.payload ?? {}) as Record<string, unknown>,
     }),
   )
-  .handler(async ({ data }): Promise<{ ok: true; message?: string }> => {
+  .handler(async ({ data }): Promise<{ ok: true; message?: string; next?: number | null; sent?: number }> => {
     const { row: admin } = await requireAdmin(data.token, data.adminToken);
     const { db } = await import("./server/db.server");
     const { award } = await import("./server/ledger.server");
@@ -500,6 +500,43 @@ export const adminAction = createServerFn({ method: "POST" })
         }
         await audit(admin.telegram_id, "rejectWithdrawal", id, { reason });
         return { ok: true, message: "Withdrawal rejected and refunded." };
+      }
+
+      case "broadcast": {
+        const text = String(p["text"] ?? "").trim().slice(0, 3500);
+        if (!text) throw new Error("Write a message first.");
+        const photo = str("photoUrl", 300) ? await directImageUrl(str("photoUrl", 300)) : "";
+        const rowsOfButtons = String(p["buttons"] ?? "")
+          .split("\n")
+          .map((line) => line.split("|").map((x) => x.trim()))
+          .filter((x) => x.length >= 2 && x[0] && x[1])
+          .slice(0, 8)
+          .map(([label, url]) => {
+            const safe = safeHttpsUrl(String(url).slice(0, 300));
+            if (!safe) throw new Error(`Button link must start with https:// (${label}).`);
+            return [{ text: String(label).slice(0, 40), url: safe }];
+          });
+        const markup = { inline_keyboard: rowsOfButtons };
+        const offset = Math.max(0, Math.floor(Number(p["offset"]) || 0));
+        const BATCH = 150;
+        const users = await client
+          .from("users")
+          .select("telegram_id")
+          .order("created_at", { ascending: true })
+          .range(offset, offset + BATCH - 1);
+        const ids = (users.data ?? []).map((u) => String(u.telegram_id));
+        const { sendPhoto } = await import("./server/telegram.server");
+        for (let i = 0; i < ids.length; i += 25) {
+          await Promise.all(
+            ids.slice(i, i + 25).map((id) =>
+              photo ? sendPhoto(id, photo, text, markup) : sendMessage(id, text, rowsOfButtons.length ? markup : false),
+            ),
+          );
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+        if (offset === 0) await audit(admin.telegram_id, "broadcast", null, { length: text.length, photo: Boolean(photo) });
+        const next = ids.length === BATCH ? offset + BATCH : null;
+        return { ok: true, sent: ids.length, next, message: next ? `Sent ${offset + ids.length}…` : `📣 Broadcast sent to ${offset + ids.length} users.` };
       }
 
       case "connectBot": {
