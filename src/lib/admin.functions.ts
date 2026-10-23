@@ -315,6 +315,8 @@ export const adminList = createServerFn({ method: "POST" })
       }
 
       if (data.resource === "adnetworks") {
+        const { ensureAdsgramCards } = await import("./server/ads.server");
+        await ensureAdsgramCards().catch(() => undefined);
         const { data: rows } = await client
           .from("ad_networks")
           .select("id, name, provider, block_id, url, logo_url, reward, daily_limit, cooldown_secs, min_watch_secs, active, sort_order")
