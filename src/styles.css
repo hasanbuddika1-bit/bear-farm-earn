@@ -66,13 +66,13 @@
   --popover: oklch(0.2 0.022 66);
   --popover-foreground: oklch(0.96 0.02 85);
 
-  --primary: oklch(0.82 0.16 82); /* honey gold */
+  --primary: oklch(0.84 0.18 78); /* honey gold */
   --primary-foreground: oklch(0.22 0.05 60);
   --secondary: oklch(0.28 0.03 68);
   --secondary-foreground: oklch(0.95 0.02 85);
   --muted: oklch(0.27 0.025 68);
   --muted-foreground: oklch(0.72 0.04 78);
-  --accent: oklch(0.74 0.16 135); /* fresh leaf */
+  --accent: oklch(0.78 0.2 145); /* fresh leaf */
   --accent-foreground: oklch(0.18 0.04 135);
 
   --destructive: oklch(0.62 0.21 25);
@@ -82,8 +82,8 @@
   --warning: oklch(0.84 0.16 80);
   --warning-foreground: oklch(0.22 0.05 60);
 
-  --usdt: oklch(0.72 0.14 165);
-  --barn: oklch(0.6 0.19 32);
+  --usdt: oklch(0.75 0.17 168);
+  --barn: oklch(0.66 0.22 28);
   --wood: oklch(0.42 0.07 55);
   --wood-foreground: oklch(0.96 0.02 90);
 
@@ -329,4 +329,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .bf-scene *, .animate-dig, .animate-bob, .animate-sway, .animate-float { animation: none !important; }
+}
+
+/* Extra colour: soft rainbow glow on every farm card */
+.farm-card {
+  box-shadow:
+    0 0 0 1px oklch(0.84 0.18 78 / 0.25),
+    0 10px 30px -12px oklch(0.68 0.2 300 / 0.35),
+    0 6px 20px -10px oklch(0.78 0.2 145 / 0.3);
 }

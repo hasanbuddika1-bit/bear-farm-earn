@@ -13,10 +13,10 @@
 - [x] Admin: online count, total balances, suspended tab, user activity view
 - [x] Withdraw requests: balance check shown + copy address
 - [x] Auto-suspend on wrong activity
-- [ ] 4 Adsgram cards (int-55404 / 55403), 5 ads each 100/80/70/60/50, 10s cooldown
-- [ ] Ad before mining/daily/refer claim and withdraw; "try again" if no ad
-- [ ] Withdraw needs all main tasks, 10 ads today, 2 active refs
-- [ ] Admin: edit ad cards, broadcast (HTML+buttons+photo)
-- [ ] Second admin 6513835941 gets all notifications
-- [ ] Admin login with bot verification code instead of password
-- [ ] More colourful design
+- [x] 4 Adsgram cards (int-55404 / 55403), 5 ads each 100/80/70/60/50, 10s cooldown
+- [x] Ad before mining/daily/refer claim and withdraw; "try again" if no ad
+- [x] Withdraw needs all main tasks, 10 ads today, 2 active refs
+- [x] Admin: edit ad cards, broadcast (HTML+buttons+photo)
+- [x] Second admin 6513835941 gets all notifications
+- [x] Admin login with bot verification code instead of password
+- [x] More colourful design

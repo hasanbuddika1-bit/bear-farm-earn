@@ -148,6 +148,7 @@ function WalletPage() {
 
       <section className="mt-4 px-4">
         <SectionTitle title="Withdraw" />
+        <WithdrawChecklist />
         <Card>
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>Minimum: {formatTokens(minTokens)} {config.tokenSymbol}</span>
@@ -248,5 +249,34 @@ function Line({ label, value, strong }: { label: string; value: string; strong?:
         {value}
       </span>
     </div>
+  );
+}
+
+function WithdrawChecklist() {
+  const q = useQuery({ queryKey: ["withdraw-req"], queryFn: () => api.withdrawRequirements(), staleTime: 20_000 });
+  if (!q.data) return null;
+  const d = q.data;
+  const items = [
+    { ok: d.mainDone >= d.mainTotal, label: `All main tasks`, value: `${d.mainDone}/${d.mainTotal}` },
+    { ok: d.adsToday >= 10, label: "Ads watched today", value: `${Math.min(d.adsToday, 10)}/10` },
+    { ok: d.activeReferrals >= 2, label: "Active friends invited", value: `${Math.min(d.activeReferrals, 2)}/2` },
+  ];
+  return (
+    <Card className="mb-3">
+      <p className="font-display text-sm font-extrabold">📋 Withdrawal requirements</p>
+      <div className="mt-2 space-y-1.5">
+        {items.map((it) => (
+          <div
+            key={it.label}
+            className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs font-bold ${
+              it.ok ? "bg-accent/20 text-accent" : "bg-barn/15 text-barn"
+            }`}
+          >
+            <span>{it.ok ? "✅" : "⏳"} {it.label}</span>
+            <span>{it.value}</span>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }
