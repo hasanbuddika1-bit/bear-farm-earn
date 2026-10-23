@@ -123,10 +123,18 @@ function AdminPage() {
 }
 
 function AdminLogin({ onDone }: { onDone: () => void }) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [sent, setSent] = useState(false);
+  const request = useMutation({
+    mutationFn: () => api.adminRequestCode(),
+    onSuccess: () => {
+      setSent(true);
+      toast.success("📩 Code sent to your Telegram");
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
   const login = useMutation({
-    mutationFn: () => api.adminLogin({ username: username.trim(), password }),
+    mutationFn: () => api.adminLogin({ code }),
     onSuccess: () => {
       toast.success("🔓 Admin session started");
       onDone();
@@ -142,37 +150,36 @@ function AdminLogin({ onDone }: { onDone: () => void }) {
             <Lock className="size-6 text-barn" />
           </div>
           <h1 className="mt-3 font-display text-xl font-extrabold">Admin sign in</h1>
-          <p className="text-xs text-muted-foreground">Second factor for the operator console.</p>
+          <p className="text-xs text-muted-foreground">The bot sends a 6-digit code to your Telegram.</p>
         </div>
-        <input
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Username"
-          autoComplete="off"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          className="mt-4 w-full rounded-xl border border-input bg-input/50 px-3 py-3 text-sm outline-none focus:border-primary"
-        />
-        <input
-          value={password}
-          type="password"
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          autoComplete="off"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          className="mt-2 w-full rounded-xl border border-input bg-input/50 px-3 py-3 text-sm outline-none focus:border-primary"
-        />
         <PopButton
-          className="mt-3 w-full"
-          loading={login.isPending}
-          disabled={!username || !password}
-          onClick={() => login.mutate()}
+          variant={sent ? "muted" : undefined}
+          className="mt-4 w-full"
+          loading={request.isPending}
+          onClick={() => request.mutate()}
         >
-          Unlock
+          {sent ? "Send code again" : "📩 Send code"}
         </PopButton>
+        {sent ? (
+          <>
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="6-digit code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              className="mt-3 w-full rounded-xl border border-input bg-input/50 px-3 py-3 text-center font-display text-xl tracking-[0.4em] outline-none focus:border-primary"
+            />
+            <PopButton
+              className="mt-3 w-full"
+              loading={login.isPending}
+              disabled={code.length !== 6}
+              onClick={() => login.mutate()}
+            >
+              Unlock
+            </PopButton>
+          </>
+        ) : null}
       </Card>
     </div>
   );
