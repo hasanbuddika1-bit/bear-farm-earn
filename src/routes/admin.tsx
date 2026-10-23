@@ -809,8 +809,6 @@ const AD_FIELDS = [
   ["blockId", "Block / zone ID"],
   ["url", "Ad link (https)"],
   ["logoUrl", "Logo image link (https)"],
-  ["reward", "Reward tokens"],
-  ["dailyLimit", "Daily limit"],
   ["cooldownSecs", "Cooldown seconds"],
   ["minWatchSecs", "Minimum watch seconds"],
 ] as const;
@@ -823,6 +821,7 @@ function AdsTab() {
       {list.isLoading ? (
         <Card className="animate-pulse text-center text-sm text-muted-foreground">Loading…</Card>
       ) : null}
+      <AdRewardSteps />
       <NewAdNetwork />
       {list.isLoading ? null : (list.data?.rows ?? []).length === 0 ? (
         <Card>
@@ -1031,5 +1030,37 @@ function BroadcastTab() {
         </PopButton>
       </Card>
     </div>
+  );
+}
+
+function AdRewardSteps() {
+  const config = useAdminList("config");
+  const action = useAdminAction();
+  const current = str(
+    (config.data?.rows ?? []).find((r) => str(r, "key") === "adRewardSteps") ?? {},
+    "value",
+  );
+  const [value, setValue] = useState("");
+  return (
+    <Card className="mb-3 space-y-2">
+      <p className="font-display text-sm font-bold">🎯 Rewards per ad (every card)</p>
+      <p className="text-[11px] text-muted-foreground">
+        1st, 2nd, 3rd… ad of the day. Number of values = ads per card. Now: {current || "100,80,70,60,50"}
+      </p>
+      <input
+        value={value}
+        placeholder="100,80,70,60,50"
+        onChange={(e) => setValue(e.target.value)}
+        className="w-full rounded-xl border border-input bg-input/50 px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+      />
+      <PopButton
+        className="w-full"
+        loading={action.isPending}
+        disabled={!value.trim()}
+        onClick={() => action.mutate({ action: "updateConfig", payload: { key: "adRewardSteps", value } })}
+      >
+        Save rewards
+      </PopButton>
+    </Card>
   );
 }
