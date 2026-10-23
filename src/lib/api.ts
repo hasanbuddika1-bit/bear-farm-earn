@@ -31,6 +31,7 @@ import {
   adminAction as adminActionFn,
   adminList as adminListFn,
   adminLogin as adminLoginFn,
+  adminRequestCode as adminRequestCodeFn,
 } from "./admin.functions";
 import {
   claimAdSession as claimAdSessionFn,
@@ -239,10 +240,12 @@ export const api = {
     return { ok: true };
   },
 
-  async adminLogin(input: { username: string; password: string }): Promise<{ ok: true; expiresAt: number }> {
-    const result = await adminLoginFn({
-      data: { token: getSessionToken(), username: input.username, password: input.password },
-    });
+  async adminRequestCode() {
+    return adminRequestCodeFn({ data: { token: getSessionToken() } });
+  },
+
+  async adminLogin(input: { code: string }): Promise<{ ok: true; expiresAt: number }> {
+    const result = await adminLoginFn({ data: { token: getSessionToken(), code: input.code } });
     setAdminToken(result.adminToken);
     return { ok: true, expiresAt: result.expiresAt };
   },

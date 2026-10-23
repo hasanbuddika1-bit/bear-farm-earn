@@ -34,54 +34,84 @@ async function audit(actor: string, action: string, target: string | null, meta:
     .insert({ actor, action, target, meta: (meta ?? {}) as Record<string, unknown> });
 }
 
-/** Admin login: correct Telegram account AND username/password. */
+async function codeKey(telegramId: string, code: string) {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`admincode:${telegramId}:${code}`));
+  return "code_" + [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 56);
+}
+
+/** Step 1: the bot sends a one-time 6-digit code to the admin's Telegram. */
+export const adminRequestCode = createServerFn({ method: "POST" })
+  .inputValidator((input: { token: string }) => ({ token: String(input?.token ?? "") }))
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    const { requireUser } = await import("./server/user.server");
+    const { rateLimit } = await import("./server/session.server");
+    const { db } = await import("./server/db.server");
+    const { sendMessage } = await import("./server/telegram.server");
+    const { isAdminTelegramId } = await import("./server/admins.server");
+
+    const { row } = await requireUser(data.token, { allowSuspended: true });
+    await rateLimit(`admincode:${row.id}`, 5, 900);
+    if (!isAdminTelegramId(row.telegram_id)) throw new Error("Not authorised.");
+
+    const n = new Uint32Array(1);
+    crypto.getRandomValues(n);
+    const code = String((n[0] ?? 0) % 1_000_000).padStart(6, "0");
+    const client = db();
+    await client.from("admin_sessions").delete().eq("telegram_id", row.telegram_id).like("token", "code_%");
+    await client.from("admin_sessions").insert({
+      token: await codeKey(row.telegram_id, code),
+      telegram_id: row.telegram_id,
+      expires_at: new Date(Date.now() + 5 * 60_000).toISOString(),
+    });
+    await sendMessage(
+      row.telegram_id,
+      `🔐 <b>Bear Farm admin code</b>\n\n<code>${code}</code>\n\n⏳ Valid for 5 minutes. Never share it.`,
+      false,
+    );
+    return { ok: true };
+  });
+
+/** Step 2: correct admin Telegram account AND the code the bot sent. */
 export const adminLogin = createServerFn({ method: "POST" })
-  .inputValidator((input: { token: string; username: string; password: string }) => ({
+  .inputValidator((input: { token: string; code: string }) => ({
     token: String(input?.token ?? ""),
-    username: String(input?.username ?? "").slice(0, 64),
-    password: String(input?.password ?? "").slice(0, 128),
+    code: String(input?.code ?? "").replace(/\D/g, "").slice(0, 6),
   }))
   .handler(async ({ data }): Promise<{ ok: true; adminToken: string; expiresAt: number }> => {
     const { requireUser } = await import("./server/user.server");
     const { rateLimit } = await import("./server/session.server");
     const { db } = await import("./server/db.server");
     const { notifyAdmin } = await import("./server/telegram.server");
+    const { isAdminTelegramId } = await import("./server/admins.server");
 
     const { row } = await requireUser(data.token, { allowSuspended: true });
     await rateLimit(`adminlogin:${row.id}`, 6, 900);
+    if (!isAdminTelegramId(row.telegram_id) || data.code.length !== 6) throw new Error("Wrong or expired code.");
 
-    const { isAdminTelegramId } = await import("./server/admins.server");
-    const username = process.env["BEARFARM_ADMIN_USERNAME"]?.trim();
-    const password = process.env["BEARFARM_ADMIN_PASSWORD"]?.trim();
-    if (!username || !password) throw new Error("Admin access is not configured.");
-
-    // Mobile keyboards auto-capitalise and add trailing spaces: usernames are
-    // case-insensitive, both fields are trimmed, and compared in constant time.
-    const digest = async (v: string) =>
-      new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v)));
-    const same = async (a: string, b: string) => {
-      const [x, y] = await Promise.all([digest(a), digest(b)]);
-      let diff = 0;
-      for (let i = 0; i < x.length; i++) diff |= (x[i] ?? 0) ^ (y[i] ?? 0);
-      return diff === 0;
-    };
-    const userOk = await same(data.username.trim().toLowerCase(), username.toLowerCase());
-    const passOk = await same(data.password.trim(), password);
-    const ok = isAdminTelegramId(row.telegram_id) && userOk && passOk;
-    if (!ok) {
-      await audit(row.telegram_id, "admin_login_failed", null, { username: data.username });
-      void notifyAdmin("🚨 Failed admin login attempt.");
-      throw new Error("Wrong username or password.");
+    const client = db();
+    // Consume the code atomically: delete returns the row only once.
+    const used = await client
+      .from("admin_sessions")
+      .delete()
+      .eq("token", await codeKey(row.telegram_id, data.code))
+      .eq("telegram_id", row.telegram_id)
+      .gte("expires_at", new Date().toISOString())
+      .select("token");
+    if (!used.data || used.data.length === 0) {
+      await audit(row.telegram_id, "admin_login_failed", null, {});
+      void notifyAdmin(`🚨 Failed admin login attempt (${row.telegram_id}).`);
+      throw new Error("Wrong or expired code.");
     }
 
     const adminToken = crypto.randomUUID().replace(/-/g, "");
     const expiresAt = Date.now() + SESSION_HOURS * 3600_000;
-    await db().from("admin_sessions").insert({
+    await client.from("admin_sessions").insert({
       token: adminToken,
       telegram_id: row.telegram_id,
       expires_at: new Date(expiresAt).toISOString(),
     });
     await audit(row.telegram_id, "admin_login", null, {});
+    void notifyAdmin(`🔓 Admin signed in: ${row.first_name ?? row.telegram_id}`);
     return { ok: true, adminToken, expiresAt };
   });
 
