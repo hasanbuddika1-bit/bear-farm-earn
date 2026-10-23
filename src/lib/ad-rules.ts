@@ -25,7 +25,7 @@ export function withdrawBlockers(p: WithdrawProgress): string[] {
     out.push(`Watch ${WITHDRAW_MIN_ADS_TODAY} ads today (${p.adsToday}/${WITHDRAW_MIN_ADS_TODAY}).`);
   if (p.activeReferrals < WITHDRAW_MIN_ACTIVE_REFERRALS)
     out.push(
-      `Invite ${WITHDRAW_MIN_ACTIVE_REFERRALS} active friends (${p.activeReferrals}/${WITHDRAW_MIN_ACTIVE_REFERRALS}).`,
+      `Invite ${WITHDRAW_MIN_ACTIVE_REFERRALS} friends (${p.activeReferrals}/${WITHDRAW_MIN_ACTIVE_REFERRALS}).`,
     );
   return out;
 }

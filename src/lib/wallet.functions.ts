@@ -67,7 +67,7 @@ async function withdrawProgress(userId: string) {
       .from("referrals")
       .select("id", { count: "exact", head: true })
       .eq("referrer_id", userId)
-      .in("stage", ["half", "verified"]),
+      .neq("stage", "fake"),
   ]);
   const mainIds = (main.data ?? []).map((t) => String(t.id));
   const done = new Set((claims.data ?? []).map((c) => String(c.task_key)));

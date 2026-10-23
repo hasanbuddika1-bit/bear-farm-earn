@@ -1,3 +1,4 @@
+import { NoAdError } from "./popup";
 /** Browser-only Adsgram helper. A reward is only claimed when show() succeeds. */
 export const GATE_AD_BLOCK = "int-55404";
 
@@ -42,5 +43,5 @@ export async function showAdsgram(blockId: string): Promise<boolean> {
 /** Shows the interstitial before a claim; throws so nothing is paid if no ad. */
 export async function requireGateAd(): Promise<void> {
   const ok = await showAdsgram(GATE_AD_BLOCK);
-  if (!ok) throw new Error("No ad available right now. Please try again.");
+  if (!ok) throw new NoAdError();
 }

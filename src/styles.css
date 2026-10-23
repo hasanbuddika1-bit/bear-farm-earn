@@ -59,16 +59,16 @@
   --radius: 1rem;
 
   /* Honey barn at night — premium dark + honey gold */
-  --background: oklch(0.17 0.018 65);
+  --background: oklch(0.18 0.04 290);
   --foreground: oklch(0.96 0.02 85);
-  --card: oklch(0.22 0.024 68);
+  --card: oklch(0.24 0.05 300);
   --card-foreground: oklch(0.96 0.02 85);
   --popover: oklch(0.2 0.022 66);
   --popover-foreground: oklch(0.96 0.02 85);
 
   --primary: oklch(0.84 0.18 78); /* honey gold */
   --primary-foreground: oklch(0.22 0.05 60);
-  --secondary: oklch(0.28 0.03 68);
+  --secondary: oklch(0.32 0.07 290);
   --secondary-foreground: oklch(0.95 0.02 85);
   --muted: oklch(0.27 0.025 68);
   --muted-foreground: oklch(0.72 0.04 78);

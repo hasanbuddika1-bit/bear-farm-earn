@@ -1,3 +1,4 @@
+import { notifyError, showReward } from "@/lib/popup";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -52,7 +53,7 @@ function WalletPage() {
     },
     onError: (error) => {
       hapticNotify("error");
-      toast.error(errorMessage(error));
+      notifyError(error);
     },
   });
 
@@ -70,7 +71,7 @@ function WalletPage() {
     },
     onError: (error) => {
       hapticNotify("error");
-      toast.error(errorMessage(error));
+      notifyError(error);
     },
   });
 
@@ -259,7 +260,7 @@ function WithdrawChecklist() {
   const items = [
     { ok: d.mainDone >= d.mainTotal, label: `All main tasks`, value: `${d.mainDone}/${d.mainTotal}` },
     { ok: d.adsToday >= 10, label: "Ads watched today", value: `${Math.min(d.adsToday, 10)}/10` },
-    { ok: d.activeReferrals >= 2, label: "Active friends invited", value: `${Math.min(d.activeReferrals, 2)}/2` },
+    { ok: d.activeReferrals >= 2, label: "Friends invited", value: `${Math.min(d.activeReferrals, 2)}/2` },
   ];
   return (
     <Card className="mb-3">

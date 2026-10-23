@@ -1,3 +1,4 @@
+import { notifyError, showReward } from "@/lib/popup";
 import { useEffect, useState } from "react";
 import { CalendarCheck, Gift, Ticket } from "lucide-react";
 import { toast } from "sonner";
@@ -34,10 +35,10 @@ export function DailyRewardCard({
     try {
       const res = await api.claimDaily({ idempotencyKey: newIdempotencyKey("daily") });
       hapticNotify("success");
-      toast.success(`🎁 Day ${res.streak} reward: ${formatTokens(res.awarded)} ${config.tokenSymbol}`);
+      showReward(res.awarded, `Day ${res.streak} reward`, "🎁");
     } catch (error) {
       hapticNotify("error");
-      toast.error(errorMessage(error));
+      notifyError(error);
     } finally {
       setBusy(false);
     }
@@ -106,11 +107,11 @@ export function RewardCodeCard({ config }: { config: AppConfig }) {
     try {
       const res = await api.claimRewardCode({ code: code.trim().toUpperCase() });
       hapticNotify("success");
-      toast.success(`🎟️ Code accepted: +${formatTokens(res.awarded)} ${config.tokenSymbol}`);
+      showReward(res.awarded, "Code accepted", "🎟️");
       setCode("");
     } catch (error) {
       hapticNotify("error");
-      toast.error(errorMessage(error));
+      notifyError(error);
     } finally {
       setBusy(false);
     }
