@@ -25,10 +25,12 @@ export const Route = createFileRoute("/ads")({
 });
 
 const CARD_TONES = [
-  "from-[oklch(0.72_0.19_45)] to-[oklch(0.6_0.2_20)]",
-  "from-[oklch(0.7_0.17_150)] to-[oklch(0.55_0.15_190)]",
-  "from-[oklch(0.68_0.2_300)] to-[oklch(0.55_0.2_265)]",
-  "from-[oklch(0.8_0.16_85)] to-[oklch(0.65_0.18_55)]",
+  "from-[oklch(0.78_0.2_50)] via-[oklch(0.68_0.24_20)] to-[oklch(0.62_0.25_350)]",
+  "from-[oklch(0.82_0.2_150)] via-[oklch(0.7_0.17_180)] to-[oklch(0.62_0.17_220)]",
+  "from-[oklch(0.75_0.22_310)] via-[oklch(0.62_0.24_285)] to-[oklch(0.6_0.2_250)]",
+  "from-[oklch(0.9_0.18_95)] via-[oklch(0.8_0.2_70)] to-[oklch(0.7_0.22_40)]",
+  "from-[oklch(0.8_0.16_200)] via-[oklch(0.7_0.2_240)] to-[oklch(0.65_0.24_300)]",
+  "from-[oklch(0.85_0.2_130)] via-[oklch(0.78_0.2_100)] to-[oklch(0.7_0.2_60)]",
 ];
 
 function errorMessage(e: unknown) {
@@ -100,10 +102,12 @@ function AdCard({ n, tone }: { n: AdNetworkDoc; tone: string }) {
   }
 
   return (
-    <div className={`overflow-hidden rounded-3xl bg-gradient-to-br ${tone} p-[2px] shadow-lg`}>
-      <div className="rounded-[22px] bg-card/85 p-4 backdrop-blur">
-        <div className="flex items-center gap-3">
-          <div className={`flex size-12 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${tone}`}>
+    <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${tone} p-[2px] shadow-[0_10px_30px_-8px_oklch(0.7_0.2_40/0.6)]`}>
+      <div className="relative overflow-hidden rounded-[22px] bg-card/80 p-4 backdrop-blur">
+        <div className={`pointer-events-none absolute -right-10 -top-10 size-32 rounded-full bg-gradient-to-br ${tone} opacity-40 blur-2xl`} />
+        <div className={`pointer-events-none absolute -bottom-12 -left-8 size-28 rounded-full bg-gradient-to-br ${tone} opacity-25 blur-2xl`} />
+        <div className="relative flex items-center gap-3">
+          <div className={`relative flex size-14 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${tone} shadow-lg ring-2 ring-foreground/20`}>
             {n.logoUrl ? <img src={n.logoUrl} alt="" className="size-full object-cover" /> : <span className="text-2xl">📺</span>}
           </div>
           <div className="min-w-0 flex-1">
@@ -120,7 +124,7 @@ function AdCard({ n, tone }: { n: AdNetworkDoc; tone: string }) {
             <p className="text-[10px] text-muted-foreground">BFT</p>
           </div>
         </div>
-        <div className="mt-3 flex gap-1.5">
+        <div className="relative mt-3 flex gap-1.5">
           {n.rewardSteps.map((r, i) => (
             <div
               key={i}
@@ -132,7 +136,7 @@ function AdCard({ n, tone }: { n: AdNetworkDoc; tone: string }) {
             </div>
           ))}
         </div>
-        <PopButton className="mt-3 w-full" loading={busy} disabled={done || cooldown > 0 || busy} onClick={watch}>
+        <PopButton className="relative mt-3 w-full" loading={busy} disabled={done || cooldown > 0 || busy} onClick={watch}>
           {done ? "Done for today ✅" : cooldown > 0 ? `Next ad in ${cooldown}s` : "▶ Watch ad"}
         </PopButton>
       </div>
