@@ -1,3 +1,4 @@
+import { Megaphone } from "lucide-react";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -40,6 +41,7 @@ const TABS = [
   { key: "withdrawals", label: "Withdrawals", icon: Banknote },
   { key: "tasks", label: "Tasks", icon: ListChecks },
   { key: "ads", label: "Ad networks", icon: PlayCircle },
+  { key: "broadcast", label: "Broadcast", icon: Megaphone },
   { key: "codes", label: "Codes", icon: KeyRound },
   { key: "config", label: "Config", icon: Settings2 },
   { key: "audit", label: "Audit log", icon: ScrollText },
@@ -102,6 +104,7 @@ function AdminPage() {
         {tab === "withdrawals" ? <WithdrawalsTab /> : null}
         {tab === "tasks" ? <TasksTab /> : null}
         {tab === "ads" ? <AdsTab /> : null}
+        {tab === "broadcast" ? <BroadcastTab /> : null}
         {tab === "codes" ? <CodesTab /> : null}
         {tab === "config" ? <ConfigTab /> : null}
         {tab === "audit" ? <ResourceList resource="audit" emoji="📜" /> : null}
@@ -972,6 +975,61 @@ function UserActivity({ userId }: { userId: string }) {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function BroadcastTab() {
+  const [text, setText] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [buttons, setButtons] = useState("🐻 Open Bear Farm | https://t.me/BEAR_FARM_1_BOT/bear_earn");
+  const [sending, setSending] = useState(false);
+  const [progress, setProgress] = useState("");
+  const inputCls =
+    "mt-0.5 w-full rounded-xl border border-input bg-input/50 px-3 py-2 text-sm text-foreground outline-none focus:border-primary";
+
+  async function send() {
+    if (!confirm("Send this message to every user?")) return;
+    setSending(true);
+    try {
+      let offset: number | null = 0;
+      while (offset !== null) {
+        const res: { next?: number | null; message?: string } = await api.adminAction({
+          action: "broadcast",
+          payload: { text, photoUrl, buttons, offset },
+        });
+        setProgress(res.message ?? "");
+        offset = res.next ?? null;
+      }
+      toast.success("📣 Broadcast finished");
+    } catch (error) {
+      toast.error(errorMessage(error));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div>
+      <SectionTitle icon={<Megaphone className="size-4 text-primary" />} title="Broadcast" />
+      <Card className="space-y-2">
+        <label className="block text-[11px] text-muted-foreground">
+          Message (HTML: &lt;b&gt;, &lt;i&gt;, &lt;u&gt;, &lt;code&gt;, &lt;a href=&quot;…&quot;&gt;)
+          <textarea rows={7} value={text} onChange={(e) => setText(e.target.value)} className={inputCls} />
+        </label>
+        <label className="block text-[11px] text-muted-foreground">
+          Photo link (optional, imgbb works)
+          <input value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} className={inputCls} />
+        </label>
+        <label className="block text-[11px] text-muted-foreground">
+          Buttons — one per line: Text | https://link
+          <textarea rows={3} value={buttons} onChange={(e) => setButtons(e.target.value)} className={inputCls} />
+        </label>
+        {progress ? <p className="text-xs text-muted-foreground">{progress}</p> : null}
+        <PopButton className="w-full" loading={sending} disabled={!text.trim()} onClick={send}>
+          📣 Send to all users
+        </PopButton>
+      </Card>
     </div>
   );
 }
