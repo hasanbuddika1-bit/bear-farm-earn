@@ -156,7 +156,7 @@ function AdminLogin({ onDone }: { onDone: () => void }) {
           <p className="text-xs text-muted-foreground">The bot sends a 6-digit code to your Telegram.</p>
         </div>
         <PopButton
-          variant={sent ? "muted" : undefined}
+          variant={sent ? "muted" : "primary"}
           className="mt-4 w-full"
           loading={request.isPending}
           onClick={() => request.mutate()}
