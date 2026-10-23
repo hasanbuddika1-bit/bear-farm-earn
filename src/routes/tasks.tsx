@@ -1,3 +1,4 @@
+import { notifyError, showReward } from "@/lib/popup";
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -171,7 +172,7 @@ function TaskRow({ task }: { task: TaskDoc }) {
       }
       openExternal(task.url);
     } catch (error) {
-      toast.error(errorMessage(error));
+      notifyError(error);
     } finally {
       setBusy(false);
     }
@@ -192,7 +193,7 @@ function TaskRow({ task }: { task: TaskDoc }) {
         });
       }
     } catch (error) {
-      toast.error(errorMessage(error));
+      notifyError(error);
     } finally {
       setBusy(false);
     }
@@ -203,11 +204,11 @@ function TaskRow({ task }: { task: TaskDoc }) {
     try {
       const res = await api.claimTask({ taskId: task.id });
       hapticNotify("success");
-      toast.success(`✅ Done! +${formatTokens(res.awarded)} ${config?.tokenSymbol ?? ""}`);
+      showReward(res.awarded, "Task complete!", "✅");
       void qc.invalidateQueries({ queryKey: ["tasks"] });
     } catch (error) {
       hapticNotify("error");
-      toast.error(errorMessage(error));
+      notifyError(error);
     } finally {
       setBusy(false);
     }

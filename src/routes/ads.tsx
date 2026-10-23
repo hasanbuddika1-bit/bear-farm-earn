@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { PlayCircle, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { notifyError, showNoAd, showReward } from "@/lib/popup";
 
 import { Card, EmptyState, PopButton } from "@/components/ui-kit";
 import { api } from "@/lib/api";
@@ -83,16 +83,16 @@ function AdCard({ n, tone }: { n: AdNetworkDoc; tone: string }) {
       const startedAt = Date.now();
       const played = await showAdsgram(s.blockId);
       if (!played) {
-        toast.error("Ad did not play. Please try again.");
+        showNoAd();
         return;
       }
       const left = s.waitSeconds * 1000 - (Date.now() - startedAt);
       if (left > 0) await new Promise((r) => setTimeout(r, left + 300));
       const res = await api.claimAdSession({ sessionId: s.sessionId });
-      toast.success(`🎉 +${res.awarded} BFT`);
+      showReward(res.awarded, "Ad reward", "🎬");
       setCooldown(10);
     } catch (e) {
-      toast.error(errorMessage(e));
+      notifyError(e);
     } finally {
       setBusy(false);
       void qc.invalidateQueries({ queryKey: ["ads"] });

@@ -1,3 +1,4 @@
+import { notifyError, showReward } from "@/lib/popup";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Gift, Share2, Users } from "lucide-react";
@@ -50,12 +51,12 @@ function ReferPage() {
     mutationFn: () => api.claimReferralEarnings({ idempotencyKey: newIdempotencyKey("ref") }),
     onSuccess: (res) => {
       hapticNotify("success");
-      toast.success(`🤝 Claimed ${formatTokens(res.awarded)} referral tokens`);
+      showReward(res.awarded, "Referral reward", "🤝");
       void qc.invalidateQueries({ queryKey: ["referrals"] });
     },
     onError: (error) => {
       hapticNotify("error");
-      toast.error(errorMessage(error));
+      notifyError(error);
     },
   });
 

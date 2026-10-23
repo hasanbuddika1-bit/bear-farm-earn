@@ -1,3 +1,4 @@
+import { notifyError, showReward } from "@/lib/popup";
 import { useEffect, useState } from "react";
 import { Pickaxe, Timer, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -45,7 +46,7 @@ export function MiningCard({
       toast.success("⛏️ Mining started! Come back in an hour.");
     } catch (error) {
       hapticNotify("error");
-      toast.error(errorMessage(error));
+      notifyError(error);
     } finally {
       setBusy(false);
     }
@@ -57,10 +58,10 @@ export function MiningCard({
       const res = await api.claimMining({ idempotencyKey: newIdempotencyKey("mine") });
       setPop((n) => n + 1);
       hapticNotify("success");
-      toast.success(`🌾 Claimed ${formatTokens(res.awarded)} ${config.tokenSymbol}!`);
+      showReward(res.awarded, "Harvest claimed!", "🌾");
     } catch (error) {
       hapticNotify("error");
-      toast.error(errorMessage(error));
+      notifyError(error);
     } finally {
       setBusy(false);
     }

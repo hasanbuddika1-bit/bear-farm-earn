@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { Toaster } from "sonner";
+import { RewardPopup } from "@/components/RewardPopup";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "@/lib/lovable-error-reporting";
@@ -128,6 +129,7 @@ function RootComponent() {
       <AuthProvider>
         <AppGate />
       </AuthProvider>
+      <RewardPopup />
       <Toaster position="top-center" theme="dark" richColors />
     </QueryClientProvider>
   );
