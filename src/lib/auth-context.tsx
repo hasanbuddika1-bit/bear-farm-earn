@@ -129,6 +129,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setServerOffset(boot.serverTime - Date.now());
         readyRef.current = true;
         setStatus("ready");
+        // Every sign-in opens one Adsgram ad (best effort, never blocks the app).
+        void import("./adsgram").then((m) => m.showAdsgram(m.GATE_AD_BLOCK));
       } catch (err) {
         if (cancelled) return;
         clearSessionToken();

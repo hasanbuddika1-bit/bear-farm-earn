@@ -855,8 +855,6 @@ function NewAdNetwork() {
         >
           <option value="link">Visit site (link)</option>
           <option value="adsgram">Adsgram</option>
-          <option value="monetag">Monetag</option>
-          <option value="gigapub">GigaPub</option>
         </select>
       </label>
       <label className="block text-[11px] text-muted-foreground">

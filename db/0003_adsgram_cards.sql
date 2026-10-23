@@ -9,4 +9,10 @@ on conflict (id) do update set
   name = excluded.name, provider = excluded.provider, block_id = excluded.block_id,
   daily_limit = 5, cooldown_secs = 10, min_watch_secs = 3, active = true, sort_order = excluded.sort_order;
 
-update public.ad_networks set active = false where id in ('monetag', 'gigapub');
+-- Monetag / GigaPub cards are replaced by Adsgram ads.
+update public.ad_networks set provider = 'adsgram', name = '🌻 Sunflower Ads', block_id = '55403',
+  logo_url = null, url = null, daily_limit = 5, cooldown_secs = 10, min_watch_secs = 3, active = true, sort_order = 5
+  where id = 'monetag';
+update public.ad_networks set provider = 'adsgram', name = '🥕 Carrot Ads', block_id = 'int-55404',
+  logo_url = null, url = null, daily_limit = 5, cooldown_secs = 10, min_watch_secs = 3, active = true, sort_order = 6
+  where id = 'gigapub';
