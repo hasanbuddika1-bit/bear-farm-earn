@@ -111,3 +111,42 @@ async function progressReferral(userId: string, referredBy: string | null, creat
     await addReferralPot(ref.data.referrer_id as string, next.potDelta);
   }
 }
+
+let seeded = false;
+/**
+ * One-time setup of the Adsgram cards (same as db/0003), applied by the server
+ * itself so no manual SQL is needed. A flag in app_config makes it run once,
+ * so cards the admin later removes are never re-added.
+ */
+export async function ensureAdsgramCards(): Promise<void> {
+  if (seeded) return;
+  const client = db();
+  const cfg = await client.from("app_config").select("data").eq("id", "default").maybeSingle();
+  const data = (cfg.data?.data ?? {}) as Record<string, unknown>;
+  if (data["adsSeedVersion"] === 3) {
+    seeded = true;
+    return;
+  }
+  const card = (id: string, name: string, block: string, sort: number) => ({
+    id, name, provider: "adsgram", block_id: block, url: null, logo_url: null,
+    reward: 100, daily_limit: 5, cooldown_secs: 10, min_watch_secs: 3, active: true, sort_order: sort,
+  });
+  const res = await client.from("ad_networks").upsert(
+    [
+      card("adsgram_reward", "🎁 Golden Reward", "55403", 1),
+      card("adsgram_int", "🌾 Harvest Video", "int-55404", 2),
+      card("adsgram_reward_2", "🍯 Honey Bonus", "55403", 3),
+      card("adsgram_int_2", "🐻 Bear Boost", "int-55404", 4),
+      card("monetag", "🌻 Sunflower Ads", "55403", 5),
+      card("gigapub", "🥕 Carrot Ads", "int-55404", 6),
+    ],
+    { onConflict: "id" },
+  );
+  if (res.error) return;
+  await client
+    .from("app_config")
+    .upsert({ id: "default", data: { ...data, adsSeedVersion: 3 }, updated_at: new Date().toISOString() });
+  const { invalidateConfigCache } = await import("./config.server");
+  invalidateConfigCache();
+  seeded = true;
+}

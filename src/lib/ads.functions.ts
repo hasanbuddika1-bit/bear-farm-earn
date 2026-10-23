@@ -11,8 +11,9 @@ export const listAdNetworks = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ networks: AdNetworkDoc[]; adsEnabled: boolean; watchedToday: number }> => {
     const { requireUser } = await import("./server/user.server");
     const { loadConfig } = await import("./server/config.server");
-    const { AD_NETWORK_COLUMNS } = await import("./server/ads.server");
+    const { AD_NETWORK_COLUMNS, ensureAdsgramCards } = await import("./server/ads.server");
     const { db } = await import("./server/db.server");
+    await ensureAdsgramCards().catch(() => undefined);
     const { adRewardForIndex } = await import("./ad-rules");
 
     const { row } = await requireUser(data.token);
